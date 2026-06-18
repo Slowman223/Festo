@@ -296,7 +296,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.01 — 18 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.02 — 18 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -403,25 +403,27 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   function loadMappingFromFirestore(){
     db.collection('config').doc('mapping').onSnapshot(function(d){
       if(d.exists()){
-        var raw=d.data().data||{};
-        mapping={};
-        Object.keys(raw).forEach(function(k){
-          var v=raw[k];
-          if(Array.isArray(v)){mapping[k]=v;}
-          else if(typeof v==='object'){mapping[k]=[v];}
-          else{mapping[k]=[{machine:v,location:''}];}
-        });
-        renderMappingPreview();
+        try{
+          var raw=JSON.parse(d.data().json||'{}');
+          mapping={};
+          Object.keys(raw).forEach(function(k){
+            var v=raw[k];
+            if(Array.isArray(v)){mapping[k]=v;}
+            else if(typeof v==='object'){mapping[k]=[v];}
+            else{mapping[k]=[{machine:v,location:''}];}
+          });
+          renderMappingPreview();
+        }catch(e){console.error('Mapping parse error:',e);}
       }
     });
   }
 
   function saveMappingToFirestore(){
     if(!db){alert('Connect Firebase first.');return;}
-    db.collection('config').doc('mapping').set({data:mapping}).then(function(){
+    db.collection('config').doc('mapping').set({json:JSON.stringify(mapping)}).then(function(){
       $('mStat').textContent=Object.values(mapping).reduce(function(a,v){return a+v.length;},0)+' mappings saved & synced';
       $('mStat').className='fstat ok';
-    });
+    }).catch(function(e){alert('Save failed: '+e.message);});
   }
 
   function renderMappingPreview(){
