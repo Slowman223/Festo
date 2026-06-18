@@ -382,10 +382,6 @@ import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, g
     }catch(e){alert('Could not parse config: '+e.message);}
   });
 
-  $('fbShowSetup').addEventListener('click',function(){
-    var c=$('fbSetupCard');
-    c.style.display=c.style.display==='none'?'block':'none';
-  });
 
   // ── Firestore listeners ───────────────────────────────────────────────────
   function startListeners(){
@@ -855,6 +851,13 @@ import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, g
   renderLog();
 
 })();
+</script>
+<script>
+// Standalone — works even if Firebase module fails to load
+document.getElementById('fbShowSetup').addEventListener('click',function(){
+  var c=document.getElementById('fbSetupCard');
+  c.style.display=c.style.display==='none'?'block':'none';
+});
 </script>
 </body>
 </html>
