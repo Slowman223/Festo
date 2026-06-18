@@ -6,6 +6,8 @@
 <title>Festo cylinder stock tracker</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -297,9 +299,6 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 </div><!-- .app -->
 
 <script>
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, getDoc, getDocs, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 (function(){
   var mapping={};
@@ -318,8 +317,8 @@ import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, g
 
   function initFirebase(cfg){
     try{
-      var app=initializeApp(cfg);
-      db=getFirestore(app);
+      var app=firebase.initializeApp(cfg);
+      db=firebase.firestore();
       setStatus('connected');
       startListeners();
       // load mapping from Firestore
@@ -386,13 +385,13 @@ import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, g
   // ── Firestore listeners ───────────────────────────────────────────────────
   function startListeners(){
     // Stock — one doc per model
-    onSnapshot(collection(db,'stock'),function(snap){
+    db.collection('stock').onSnapshot(function(snap){
       stock=[];
       snap.forEach(function(d){stock.push(Object.assign({id:d.id},d.data()));});
       renderStock();
     });
     // Replacements — ordered by timestamp desc
-    onSnapshot(query(collection(db,'replacements'),orderBy('ts','desc')),function(snap){
+    db.collection('replacements').orderBy('ts','desc').onSnapshot(function(snap){
       replacements=[];
       snap.forEach(function(d){replacements.push(Object.assign({id:d.id},d.data()));});
       renderLog();
@@ -401,7 +400,7 @@ import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, g
 
   // ── Mapping: stored in Firestore as a single doc ─────────────────────────
   function loadMappingFromFirestore(){
-    getDoc(doc(db,'config','mapping')).then(function(d){
+    db.collection('config').doc('mapping').get().then(function(d){
       if(d.exists()){
         var raw=d.data().data||{};
         mapping={};
@@ -418,7 +417,7 @@ import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, g
 
   function saveMappingToFirestore(){
     if(!db){alert('Connect Firebase first.');return;}
-    setDoc(doc(db,'config','mapping'),{data:mapping}).then(function(){
+    db.collection('config').doc('mapping').set({data:mapping}).then(function(){
       $('mStat').textContent=Object.values(mapping).reduce(function(a,v){return a+v.length;},0)+' mappings saved & synced';
       $('mStat').className='fstat ok';
     });
@@ -594,15 +593,15 @@ import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, g
     var modelKey=currentResult.model;
     var ex=stock.filter(function(s){return s.model===modelKey;})[0];
     var newQty=ex?Math.max(0,ex.qty-qty):0;
-    setDoc(doc(db,'stock',modelKey.replace(/[^a-zA-Z0-9-_]/g,'_')),{
+    db.collection('stock').doc(modelKey.replace(/[^a-zA-Z0-9-_]/g,'_')).set({
       model:modelKey,series:currentResult.series||'',
       bore:currentResult.bore_mm||'',stroke:currentResult.stroke_mm||'',qty:newQty
     });
     // add replacement log
-    addDoc(collection(db,'replacements'),{
+    db.collection('replacements').add({
       date:now.toLocaleDateString('en-AU'),
       time:now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}),
-      ts:serverTimestamp(),
+      ts:firebase.firestore.FieldValue.serverTimestamp(),
       model:modelKey,series:currentResult.series||'',
       bore:currentResult.bore_mm||'',stroke:currentResult.stroke_mm||'',
       machine:machine,location:location,qty:qty,type:'out'
@@ -636,13 +635,13 @@ import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, g
         var i=+b.dataset.i;
         var s=stock[i];if(!s||!db)return;
         var nq=b.dataset.a==='inc'?s.qty+1:Math.max(0,s.qty-1);
-        setDoc(doc(db,'stock',b.dataset.id),Object.assign({},s,{qty:nq,id:undefined}));
+        db.collection('stock').doc(b.dataset.id).set(Object.assign({},s,{qty:nq,id:undefined}));
       });
     });
     $('stockList').querySelectorAll('.dbtn').forEach(function(b){
       b.addEventListener('click',function(){
         if(!db)return;
-        deleteDoc(doc(db,'stock',b.dataset.id));
+        db.collection('stock').doc(b.dataset.id).delete();
       });
     });
   }
@@ -822,14 +821,14 @@ import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc, g
     var modelKey=currentResultIn.model;
     var ex=stock.filter(function(s){return s.model===modelKey;})[0];
     var newQty=ex?ex.qty+qtyIn:qtyIn;
-    setDoc(doc(db,'stock',modelKey.replace(/[^a-zA-Z0-9-_]/g,'_')),{
+    db.collection('stock').doc(modelKey.replace(/[^a-zA-Z0-9-_]/g,'_')).set({
       model:modelKey,series:currentResultIn.series||'',
       bore:currentResultIn.bore_mm||'',stroke:currentResultIn.stroke_mm||'',qty:newQty
     });
-    addDoc(collection(db,'replacements'),{
+    db.collection('replacements').add({
       date:now.toLocaleDateString('en-AU'),
       time:now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}),
-      ts:serverTimestamp(),
+      ts:firebase.firestore.FieldValue.serverTimestamp(),
       model:modelKey,series:currentResultIn.series||'',
       bore:currentResultIn.bore_mm||'',stroke:currentResultIn.stroke_mm||'',
       machine:'—',location:'—',qty:qtyIn,type:'in'
