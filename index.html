@@ -400,7 +400,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
   // ── Mapping: stored in Firestore as a single doc ─────────────────────────
   function loadMappingFromFirestore(){
-    db.collection('config').doc('mapping').get().then(function(d){
+    db.collection('config').doc('mapping').onSnapshot(function(d){
       if(d.exists()){
         var raw=d.data().data||{};
         mapping={};
