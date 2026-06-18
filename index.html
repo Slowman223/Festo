@@ -296,7 +296,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.02 — 18 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.03 — 18 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -404,7 +404,16 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     db.collection('config').doc('mapping').onSnapshot(function(d){
       if(d.exists()){
         try{
-          var raw=JSON.parse(d.data().json||'{}');
+          var data=d.data();
+          // handle both 'json' field (new) and 'data' field (old) and raw string
+          var jsonStr=data.json||data.data||null;
+          if(!jsonStr){
+            // try first value in the document
+            var keys=Object.keys(data);
+            if(keys.length>0)jsonStr=data[keys[0]];
+          }
+          if(typeof jsonStr!=='string')jsonStr=JSON.stringify(jsonStr);
+          var raw=JSON.parse(jsonStr||'{}');
           mapping={};
           Object.keys(raw).forEach(function(k){
             var v=raw[k];
