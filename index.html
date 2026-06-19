@@ -280,9 +280,6 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       <button class="expbtn" id="stockExpBtn"><i class="ti ti-file-spreadsheet"></i> Export</button>
     </div>
   </div>
-  <div class="search-bar">
-    <input class="search-input" id="stockSearch" placeholder="Search model…" oninput="filterStock()">
-  </div>
   <div id="stockList"></div>
 </div>
 
@@ -291,9 +288,6 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   <div class="sec-hdr">
     <h2>Replacement log</h2>
     <button class="expbtn" id="expBtn"><i class="ti ti-file-spreadsheet"></i> Export</button>
-  </div>
-  <div class="search-bar">
-    <input class="search-input" id="logSearch" placeholder="Search model or machine…" oninput="filterLog()">
   </div>
   <div id="logArea"></div>
 </div>
@@ -320,7 +314,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.09 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.11 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -451,10 +445,21 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
           mapping={};
           Object.keys(raw).forEach(function(k){
             var v=raw[k];
-            if(Array.isArray(v)){mapping[k]=v;}
-            else if(typeof v==='object'&&!Array.isArray(v)){mapping[k]=[v];}
-            else{mapping[k]=[{machine:v,location:''}];}
-            mapping[k].minStock=raw[k].minStock||0;
+            if(v&&v.machines&&Array.isArray(v.machines)){
+              // new format {machines:[...], minStock:N}
+              mapping[k]=v.machines;
+              mapping[k].minStock=v.minStock||0;
+            }else if(Array.isArray(v)){
+              // old format — plain array, no minStock
+              mapping[k]=v;
+              mapping[k].minStock=0;
+            }else if(typeof v==='object'){
+              mapping[k]=[v];
+              mapping[k].minStock=0;
+            }else{
+              mapping[k]=[{machine:v,location:''}];
+              mapping[k].minStock=0;
+            }
           });
           renderMappingPreview();
         }catch(e){console.error('Mapping parse error:',e);}
@@ -464,14 +469,13 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
   function saveMappingToFirestore(){
     if(!db){alert('Connect Firebase first.');return;}
-    // build clean serialisable version preserving minStock
+    // store as {machines:[...], minStock:N} so JSON.stringify preserves minStock
     var toSave={};
     Object.keys(mapping).forEach(function(k){
-      toSave[k]=mapping[k].slice();
-      toSave[k].minStock=mapping[k].minStock||0;
+      toSave[k]={machines:mapping[k].slice(),minStock:mapping[k].minStock||0};
     });
     db.collection('config').doc('mapping').set({json:JSON.stringify(toSave)}).then(function(){
-      $('mStat').textContent=Object.values(mapping).reduce(function(a,v){return a+v.length;},0)+' mappings saved & synced';
+      $('mStat').textContent=Object.values(mapping).reduce(function(a,v){return v.length;},0)+' mappings saved & synced';
       $('mStat').className='fstat ok';
     }).catch(function(e){alert('Save failed: '+e.message);});
   }
@@ -670,8 +674,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   }
 
   window.filterStock=function(){
-    var q=($('stockSearch')&&$('stockSearch').value||'').toLowerCase();
-    var filtered=stock.filter(function(s){return !q||s.model.toLowerCase().indexOf(q)!==-1;});
+    var filtered=stock.slice();
     if(!filtered.length){
       $('stockList').innerHTML='<div class="empty"><i class="ti ti-box-off" style="font-size:24px;display:block;margin-bottom:8px"></i>'+(q?'No results':'No cylinders in stock yet')+'</div>';
       return;
@@ -709,10 +712,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   function renderLog(){filterLog();}
 
   window.filterLog=function(){
-    var q=($('logSearch')&&$('logSearch').value||'').toLowerCase();
-    var filtered=replacements.filter(function(r){
-      return !q||(r.model&&r.model.toLowerCase().indexOf(q)!==-1)||(r.machine&&r.machine.toLowerCase().indexOf(q)!==-1)||(r.location&&r.location.toLowerCase().indexOf(q)!==-1);
-    });
+    var filtered=replacements.slice();
     if(!filtered.length){
       $('logArea').innerHTML='<div class="empty"><i class="ti ti-history" style="font-size:24px;display:block;margin-bottom:8px"></i>'+(q?'No results':'No replacements logged yet')+'</div>';
       return;
