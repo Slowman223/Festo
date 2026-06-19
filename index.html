@@ -296,7 +296,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 <div class="panel" id="panel-mapping">
   <div class="uc">
     <h3>Cylinder → machine mapping</h3>
-    <p>Upload an Excel file with four columns: <strong>Model</strong>, <strong>Machine No.</strong>, <strong>Location</strong>, <strong>Min Stock</strong>. The app will warn when stock drops below the minimum.</p>
+    <p>Upload an Excel file with five columns: <strong>Model</strong>, <strong>Machine No.</strong>, <strong>Location</strong>, <strong>Min Stock</strong>, <strong>Max Stock</strong>. Min stock triggers a warning; max stock is the reorder target.</p>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="fbtn"><input type="file" id="mappingFile" accept=".xlsx,.xls,.csv"><i class="ti ti-upload" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>Upload</button>
       <span class="fstat" id="mStat">No file loaded</span>
@@ -307,14 +307,14 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     </div>
     <div id="mPreview" style="display:none;overflow-x:auto;margin-top:.75rem">
       <table class="mt">
-        <thead><tr><th>Model</th><th>Machine No.</th><th>Location</th><th>Min Stock</th></tr></thead>
+        <thead><tr><th>Model</th><th>Machine No.</th><th>Location</th><th>Min</th><th>Max</th></tr></thead>
         <tbody id="mBody"></tbody>
       </table>
     </div>
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.23 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.25 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -454,11 +454,13 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
           // rebuild lookup mapping from rows
           mapping={};
           rows.forEach(function(row){
-            if(!mapping[row.key]){mapping[row.key]={displayName:row.displayName||row.key,machines:[],minStock:row.minStock||0};}
-            else if(row.minStock>0&&mapping[row.key].minStock===0){mapping[row.key].minStock=row.minStock;}
+            if(!mapping[row.key]){mapping[row.key]={displayName:row.displayName||row.key,machines:[],minStock:row.minStock||0,maxStock:row.maxStock||0};}
+            else{
+              if(row.minStock>0&&mapping[row.key].minStock===0)mapping[row.key].minStock=row.minStock;
+              if(row.maxStock>0&&mapping[row.key].maxStock===0)mapping[row.key].maxStock=row.maxStock;
+            }
             mapping[row.key].machines.push({machine:row.machine,location:row.location});
           });
-          // store ordered rows exactly as loaded — do not modify minStock per row
           window._mappingRows=rows;
           renderMappingPreview();
         }catch(e){console.error('Mapping parse error:',e);}
@@ -494,7 +496,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     (window._mappingRows||[]).forEach(function(row){
       var minStock=row.minStock||0;
       var tr=document.createElement('tr');
-      tr.innerHTML='<td>'+(row.displayName||row.key)+'</td><td>'+row.machine+'</td><td>'+(row.location||'—')+'</td><td>'+(minStock||'—')+'</td>';
+      tr.innerHTML='<td>'+(row.displayName||row.key)+'</td><td>'+row.machine+'</td><td>'+(row.location||'—')+'</td><td>'+(minStock||'—')+'</td><td>'+((row.maxStock)||'—')+'</td>';
       body.appendChild(tr);count++;
     });
     $('mPreview').style.display=count?'block':'none';
@@ -762,8 +764,16 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       }
     });
     if(!rows.length){alert('No mapping loaded — upload your mapping first.');return;}
-    var ws=XLSX.utils.aoa_to_sheet([['Model','Series','Bore (mm)','Stroke (mm)','Qty','Min Stock','Status']].concat(rows));
-    ws['!cols']=[{wch:25},{wch:10},{wch:10},{wch:12},{wch:6},{wch:10},{wch:10}];
+    var ws=XLSX.utils.aoa_to_sheet([['Model','Qty','Min Stock','Max Stock','To Order','Status']].concat(rows.map(function(r){
+      var qty=r[4];
+      var minStock=r[5]||0;
+      var mk=r[0].toLowerCase();
+      var maxStock=(mapping[mk]&&mapping[mk].maxStock)||0;
+      var toOrder=maxStock>0&&qty<maxStock?maxStock-qty:0;
+      var status=minStock>0&&qty<=minStock?'Low stock':'OK';
+      return[r[0],qty,minStock||'',maxStock||'',toOrder||'',status];
+    })));
+    ws['!cols']=[{wch:25},{wch:6},{wch:10},{wch:10},{wch:10},{wch:10}];
     XLSX.utils.book_append_sheet(wb,ws,'Stock');
     XLSX.writeFile(wb,'festo-stock-'+new Date().toISOString().slice(0,10)+'.xlsx');
   });
@@ -802,18 +812,22 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         var minStock=minStockRaw===''||minStockRaw==='—'?0:parseInt(minStockRaw)||0;
         if(model&&machine){
           var mk=model.toLowerCase();
-          // store minStock per row
-          mappingRows.push({key:mk,displayName:model,machine:machine,location:location,minStock:minStock});
+          var maxStockRaw=String(r[4]||'').trim();
+          var maxStock=maxStockRaw===''||maxStockRaw==='—'?0:parseInt(maxStockRaw)||0;
+          mappingRows.push({key:mk,displayName:model,machine:machine,location:location,minStock:minStock,maxStock:maxStock});
           count++;
           var tr=document.createElement('tr');
-          tr.innerHTML='<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td><td>'+(minStock||'—')+'</td>';
+          tr.innerHTML='<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td><td>'+(minStock||'—')+'</td><td>'+(maxStock||'—')+'</td>';
           $('mBody').appendChild(tr);
         }
       });
-      // rebuild mapping lookup — minStock per model = first non-zero value (for low stock warning)
+      // rebuild mapping lookup — minStock/maxStock per model = first non-zero value
       mappingRows.forEach(function(row){
-        if(!mapping[row.key]){mapping[row.key]={displayName:row.displayName,machines:[],minStock:row.minStock||0};}
-        else if(row.minStock>0&&mapping[row.key].minStock===0){mapping[row.key].minStock=row.minStock;}
+        if(!mapping[row.key]){mapping[row.key]={displayName:row.displayName,machines:[],minStock:row.minStock||0,maxStock:row.maxStock||0};}
+        else{
+          if(row.minStock>0&&mapping[row.key].minStock===0)mapping[row.key].minStock=row.minStock;
+          if(row.maxStock>0&&mapping[row.key].maxStock===0)mapping[row.key].maxStock=row.maxStock;
+        }
         mapping[row.key].machines.push({machine:row.machine,location:row.location});
       });
       $('mPreview').style.display=count?'block':'none';
@@ -831,13 +845,13 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   $('dlTpl').addEventListener('click',function(){
     var wb=XLSX.utils.book_new();
     var ws=XLSX.utils.aoa_to_sheet([
-      ['Model','Machine No.','Location','Min Stock'],
-      ['DNC-40-200-PPV-A','M-001','Line 1 / Press Area',2],
-      ['DNC-40-200-PPV-A','M-007','Line 2 / Press Area',''],
-      ['DNC-32-100-PPV-A','M-042','Line 3 / Bay 2',3],
-      ['ADN-20-50-I-PPS-A','M-017','Assembly / Station 4',1],
+      ['Model','Machine No.','Location','Min Stock','Max Stock'],
+      ['DNC-40-200-PPV-A','M-001','Line 1 / Press Area',2,5],
+      ['DNC-40-200-PPV-A','M-007','Line 2 / Press Area','',''],
+      ['DNC-32-100-PPV-A','M-042','Line 3 / Bay 2',3,6],
+      ['ADN-20-50-I-PPS-A','M-017','Assembly / Station 4',1,3],
     ]);
-    ws['!cols']=[{wch:25},{wch:15},{wch:25},{wch:10}];
+    ws['!cols']=[{wch:25},{wch:15},{wch:25},{wch:10},{wch:10}];
     XLSX.utils.book_append_sheet(wb,ws,'Mapping');
     XLSX.writeFile(wb,'cylinder-mapping-template.xlsx');
   });
