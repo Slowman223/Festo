@@ -314,7 +314,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.21 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.22 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -470,7 +470,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     if(!db){alert('Connect Firebase first.');return;}
     // always use the original upload row order stored in window._mappingRows
     var rows=(window._mappingRows||[]).map(function(r){
-      return {key:r.key,displayName:r.displayName,machine:r.machine,location:r.location,minStock:mapping[r.key]?mapping[r.key].minStock||0:0};
+      return {key:r.key,displayName:r.displayName,machine:r.machine,location:r.location,minStock:r.minStock||0};
     });
     if(!rows.length){alert('No mapping loaded. Please upload your spreadsheet first.');return;}
     db.collection('config').doc('mapping').set({rows:JSON.stringify(rows)}).then(function(){
