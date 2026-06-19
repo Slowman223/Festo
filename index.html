@@ -314,7 +314,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.22 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.23 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -736,16 +736,33 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
   // ── Export ───────────────────────────────────────────────────────────────
   $('stockExpBtn').addEventListener('click',function(){
-    if(!stock.length){alert('No stock to export yet.');return;}
     var wb=XLSX.utils.book_new();
-    var ws=XLSX.utils.aoa_to_sheet([
-      ['Model','Series','Bore (mm)','Stroke (mm)','Qty','Min Stock','Status']
-    ].concat(stock.map(function(s){
+    // build a complete list from mapping, merging in actual stock quantities
+    var stockMap={};
+    stock.forEach(function(s){stockMap[s.model.toLowerCase()]=s;});
+    // use mapping rows for order and completeness
+    var seen={};
+    var rows=[];
+    (window._mappingRows||[]).forEach(function(row){
+      if(seen[row.key])return;// one row per model in export
+      seen[row.key]=true;
+      var s=stockMap[row.key];
+      var qty=s?s.qty:0;
+      var minStock=(mapping[row.key]&&mapping[row.key].minStock)||0;
+      var status=minStock>0&&qty<=minStock?'Low stock':'OK';
+      rows.push([row.displayName,s?s.series||'':'',s?s.bore||'':'',s?s.stroke||'':'',qty,minStock||'',status]);
+    });
+    // also add any stocked items not in mapping
+    stock.forEach(function(s){
       var mk=s.model.toLowerCase();
-      var minStock=(mapping[mk]&&mapping[mk].minStock)||0;
-      var status=minStock>0&&s.qty<=minStock?'Low stock':'OK';
-      return[s.model,s.series||'',s.bore||'',s.stroke||'',s.qty,minStock||'',status];
-    })));
+      if(!seen[mk]){
+        var minStock=(mapping[mk]&&mapping[mk].minStock)||0;
+        var status=minStock>0&&s.qty<=minStock?'Low stock':'OK';
+        rows.push([s.model,s.series||'',s.bore||'',s.stroke||'',s.qty,minStock||'',status]);
+      }
+    });
+    if(!rows.length){alert('No mapping loaded — upload your mapping first.');return;}
+    var ws=XLSX.utils.aoa_to_sheet([['Model','Series','Bore (mm)','Stroke (mm)','Qty','Min Stock','Status']].concat(rows));
     ws['!cols']=[{wch:25},{wch:10},{wch:10},{wch:12},{wch:6},{wch:10},{wch:10}];
     XLSX.utils.book_append_sheet(wb,ws,'Stock');
     XLSX.writeFile(wb,'festo-stock-'+new Date().toISOString().slice(0,10)+'.xlsx');
