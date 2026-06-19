@@ -314,7 +314,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.15 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.16 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -441,20 +441,38 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
             if(keys.length>0)jsonStr=data[keys[0]];
           }
           if(typeof jsonStr!=='string')jsonStr=JSON.stringify(jsonStr);
-          var raw=JSON.parse(jsonStr||'{}');
+          var data2=d.data();
           mapping={};
-          Object.keys(raw).forEach(function(k){
-            var v=raw[k];
-            if(v&&v.machines&&Array.isArray(v.machines)){
-              mapping[k]={displayName:v.displayName||k,machines:v.machines,minStock:v.minStock||0,order:typeof v.order==='number'?v.order:9999};
-            }else if(Array.isArray(v)){
-              mapping[k]={displayName:k,machines:v,minStock:0,order:9999};
-            }else if(typeof v==='object'){
-              mapping[k]={displayName:k,machines:[v],minStock:0,order:9999};
-            }else{
-              mapping[k]={displayName:k,machines:[{machine:v,location:''}],minStock:0,order:9999};
-            }
-          });
+          var orderedRows=null;
+          // try new rows format first
+          if(data2.rows){
+            try{orderedRows=JSON.parse(data2.rows);}catch(e){}
+          }
+          // fall back to old json format
+          if(!orderedRows&&data2.json){
+            try{
+              var old=JSON.parse(data2.json);
+              orderedRows=[];
+              Object.keys(old).forEach(function(k){
+                var v=old[k];
+                var machines=v.machines||(Array.isArray(v)?v:[v]);
+                machines.forEach(function(m){
+                  orderedRows.push({key:k,displayName:v.displayName||k,machine:m.machine||m,location:m.location||'',minStock:v.minStock||0});
+                });
+              });
+            }catch(e){}
+          }
+          window._mappingRows=orderedRows||[];
+          if(orderedRows){
+            var modelMinStock2={};
+            orderedRows.forEach(function(row){
+              if(row.minStock>0&&!modelMinStock2[row.key])modelMinStock2[row.key]=row.minStock;
+            });
+            orderedRows.forEach(function(row){
+              if(!mapping[row.key]){mapping[row.key]={displayName:row.displayName||row.key,machines:[],minStock:modelMinStock2[row.key]||0};}
+              mapping[row.key].machines.push({machine:row.machine,location:row.location});
+            });
+          }
           renderMappingPreview();
         }catch(e){console.error('Mapping parse error:',e);}
       }
@@ -463,9 +481,27 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
   function saveMappingToFirestore(){
     if(!db){alert('Connect Firebase first.');return;}
-    db.collection('config').doc('mapping').set({json:JSON.stringify(mapping)}).then(function(){
-      var total=Object.values(mapping).reduce(function(a,v){return a+(v.machines?v.machines.length:0);},0);
-      $('mStat').textContent=total+' mappings saved & synced';
+    // build flat rows array preserving order
+    var rows=[];
+    var seen={};
+    // we need mappingRows — rebuild from mapping in display order if not available
+    var keys=Object.keys(mapping);
+    keys.forEach(function(k){
+      var entry=mapping[k];
+      (entry.machines||[]).forEach(function(m){
+        rows.push({key:k,displayName:entry.displayName||k,machine:m.machine,location:m.location,minStock:entry.minStock||0});
+      });
+    });
+    db.collection('config').doc('mapping').set({rows:JSON.stringify(rows)}).then(function(){
+      $('mStat').textContent=rows.length+' rows saved & synced';
+      $('mStat').className='fstat ok';
+    }).catch(function(e){alert('Save failed: '+e.message);});
+  }
+
+  function saveMappingRowsToFirestore(rows){
+    if(!db)return;
+    db.collection('config').doc('mapping').set({rows:JSON.stringify(rows)}).then(function(){
+      $('mStat').textContent=rows.length+' rows saved & synced';
       $('mStat').className='fstat ok';
     }).catch(function(e){alert('Save failed: '+e.message);});
   }
@@ -473,18 +509,28 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   function renderMappingPreview(){
     var body=$('mBody');body.innerHTML='';
     var count=0;
-    var sortedKeys=Object.keys(mapping).sort(function(a,b){return (mapping[a].order||0)-(mapping[b].order||0);});
-    sortedKeys.forEach(function(m){
-      var entry=mapping[m];
-      var machines=entry.machines||[];
-      var displayName=entry.displayName||m;
-      var minStock=entry.minStock||0;
-      machines.forEach(function(v){
+    // use flat rows from Firestore if available for correct order
+    var rows=window._mappingRows||[];
+    if(rows.length){
+      rows.forEach(function(row){
+        var minStock=(mapping[row.key]&&mapping[row.key].minStock)||0;
         var tr=document.createElement('tr');
-        tr.innerHTML='<td>'+displayName+'</td><td>'+(v.machine||'')+'</td><td>'+(v.location||'—')+'</td><td>'+(minStock||'—')+'</td>';
+        tr.innerHTML='<td>'+(row.displayName||row.key)+'</td><td>'+row.machine+'</td><td>'+(row.location||'—')+'</td><td>'+(minStock||'—')+'</td>';
         body.appendChild(tr);count++;
       });
-    });
+    }else{
+      Object.keys(mapping).forEach(function(m){
+        var entry=mapping[m];
+        var machines=entry.machines||[];
+        var displayName=entry.displayName||m;
+        var minStock=entry.minStock||0;
+        machines.forEach(function(v){
+          var tr=document.createElement('tr');
+          tr.innerHTML='<td>'+displayName+'</td><td>'+(v.machine||'')+'</td><td>'+(v.location||'—')+'</td><td>'+(minStock||'—')+'</td>';
+          body.appendChild(tr);count++;
+        });
+      });
+    }
     $('mPreview').style.display=count?'block':'none';
     var total=count;
     $('mStat').textContent=total+' mappings loaded';
@@ -763,7 +809,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       var wb=XLSX.read(ab,{type:'array'});
       var ws=wb.Sheets[wb.SheetNames[0]];
       var rows=XLSX.utils.sheet_to_json(ws,{header:1});
-      mapping={};$('mBody').innerHTML='';var count=0;var modelOrder=[];
+      mapping={};var mappingRows=[];window._mappingRows=mappingRows;$('mBody').innerHTML='';var count=0;var modelMinStock={};
       rows.forEach(function(r,i){
         if(i===0)return;
         var model=String(r[0]||'').trim();
@@ -773,18 +819,19 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         var minStock=minStockRaw===''||minStockRaw==='—'?0:parseInt(minStockRaw)||0;
         if(model&&machine){
           var mk=model.toLowerCase();
-          if(!mapping[mk]){
-            mapping[mk]={displayName:model,machines:[],minStock:minStock,order:modelOrder.length};
-            modelOrder.push(mk);
-          } else if(minStock>0&&mapping[mk].minStock===0){
-            mapping[mk].minStock=minStock;
-          }
-          mapping[mk].machines.push({machine:machine,location:location});
+          // track first minStock seen per model
+          if(minStock>0&&!modelMinStock[mk])modelMinStock[mk]=minStock;
+          mappingRows.push({key:mk,displayName:model,machine:machine,location:location});
           count++;
           var tr=document.createElement('tr');
-          tr.innerHTML='<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td><td>'+(mapping[mk].minStock||'—')+'</td>';
+          tr.innerHTML='<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td><td>'+(modelMinStock[mk]||'—')+'</td>';
           $('mBody').appendChild(tr);
         }
+      });
+      // rebuild mapping lookup from rows
+      mappingRows.forEach(function(row){
+        if(!mapping[row.key]){mapping[row.key]={displayName:row.displayName,machines:[],minStock:modelMinStock[row.key]||0};}
+        mapping[row.key].machines.push({machine:row.machine,location:row.location});
       });
       $('mPreview').style.display=count?'block':'none';
       $('mStat').textContent=count+' rows loaded — tap Save to sync';
@@ -794,7 +841,23 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   });
 
   $('mSaveBtn').addEventListener('click',function(){
-    saveMappingToFirestore();
+    // build rows from current mappingRows variable if available, else from mapping
+    var rows=[];
+    Object.keys(mapping).forEach(function(k){
+      var entry=mapping[k];
+      (entry.machines||[]).forEach(function(m){
+        rows.push({key:k,displayName:entry.displayName||k,machine:m.machine,location:m.location,minStock:entry.minStock||0});
+      });
+    });
+    // try to use ordered rows from upload if still in scope
+    if(typeof mappingRows!=='undefined'&&mappingRows.length){
+      var orderedRows=mappingRows.map(function(r){
+        return {key:r.key,displayName:r.displayName,machine:r.machine,location:r.location,minStock:mapping[r.key]?mapping[r.key].minStock||0:0};
+      });
+      saveMappingRowsToFirestore(orderedRows);
+    }else{
+      saveMappingRowsToFirestore(rows);
+    }
     $('mSaveBtn').style.display='none';
   });
 
