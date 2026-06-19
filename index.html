@@ -314,7 +314,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.19 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.20 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -775,7 +775,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       var wb=XLSX.read(ab,{type:'array'});
       var ws=wb.Sheets[wb.SheetNames[0]];
       var rows=XLSX.utils.sheet_to_json(ws,{header:1});
-      mapping={};var mappingRows=[];window._mappingRows=mappingRows;$('mBody').innerHTML='';var count=0;var modelMinStock={};
+      mapping={};var mappingRows=[];window._mappingRows=mappingRows;$('mBody').innerHTML='';var count=0;
       rows.forEach(function(r,i){
         if(i===0)return;
         var model=String(r[0]||'').trim();
@@ -785,18 +785,18 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         var minStock=minStockRaw===''||minStockRaw==='—'?0:parseInt(minStockRaw)||0;
         if(model&&machine){
           var mk=model.toLowerCase();
-          // track first minStock seen per model
-          if(minStock>0&&!modelMinStock[mk])modelMinStock[mk]=minStock;
-          mappingRows.push({key:mk,displayName:model,machine:machine,location:location});
+          // store minStock per row
+          mappingRows.push({key:mk,displayName:model,machine:machine,location:location,minStock:minStock});
           count++;
           var tr=document.createElement('tr');
-          tr.innerHTML='<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td><td>'+(modelMinStock[mk]||'—')+'</td>';
+          tr.innerHTML='<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td><td>'+(minStock||'—')+'</td>';
           $('mBody').appendChild(tr);
         }
       });
-      // rebuild mapping lookup from rows
+      // rebuild mapping lookup — minStock per model = max across all rows
       mappingRows.forEach(function(row){
-        if(!mapping[row.key]){mapping[row.key]={displayName:row.displayName,machines:[],minStock:modelMinStock[row.key]||0};}
+        if(!mapping[row.key]){mapping[row.key]={displayName:row.displayName,machines:[],minStock:row.minStock||0};}
+        else if(row.minStock>mapping[row.key].minStock){mapping[row.key].minStock=row.minStock;}
         mapping[row.key].machines.push({machine:row.machine,location:row.location});
       });
       $('mPreview').style.display=count?'block':'none';
