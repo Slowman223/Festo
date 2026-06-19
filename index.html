@@ -314,7 +314,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.18 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.19 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -807,23 +807,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   });
 
   $('mSaveBtn').addEventListener('click',function(){
-    // build rows from current mappingRows variable if available, else from mapping
-    var rows=[];
-    Object.keys(mapping).forEach(function(k){
-      var entry=mapping[k];
-      (entry.machines||[]).forEach(function(m){
-        rows.push({key:k,displayName:entry.displayName||k,machine:m.machine,location:m.location,minStock:entry.minStock||0});
-      });
-    });
-    // try to use ordered rows from upload if still in scope
-    if(typeof mappingRows!=='undefined'&&mappingRows.length){
-      var orderedRows=mappingRows.map(function(r){
-        return {key:r.key,displayName:r.displayName,machine:r.machine,location:r.location,minStock:mapping[r.key]?mapping[r.key].minStock||0:0};
-      });
-      saveMappingRowsToFirestore(orderedRows);
-    }else{
-      saveMappingRowsToFirestore(rows);
-    }
+    saveMappingToFirestore();
     $('mSaveBtn').style.display='none';
   });
 
