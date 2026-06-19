@@ -302,7 +302,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.07 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.08 — 19 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -657,12 +657,8 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       return '<div class="si'+(isLow?' low-stock':'')+'">'
         +'<i class="ti ti-cylinder" style="font-size:20px;color:'+(isLow?'var(--red-tx)':'var(--text2)')+';flex-shrink:0"></i>'
         +'<div class="si-info"><div class="si-name">'+s.model+(isLow?'<span class="warn-badge">Low stock</span>':'')+'</div><div class="si-sub">'+sub+'</div></div>'
-        +'<div class="sqty">'
-        +'<button class="iq" data-a="dec" data-id="'+(s.id||'')+'" data-qty="'+s.qty+'" data-i="'+realIdx+'"><i class="ti ti-minus"></i></button>'
-        +'<span>'+s.qty+'</span>'
-        +'<button class="iq" data-a="inc" data-id="'+(s.id||'')+'" data-qty="'+s.qty+'" data-i="'+realIdx+'"><i class="ti ti-plus"></i></button>'
-        +'</div>'
-        +'<button class="dbtn" data-id="'+(s.id||'')+'" title="Remove"><i class="ti ti-trash"></i></button>'
+        +'<div class="sqty"><span>'+s.qty+'</span></div>'
+        +'<button class="dbtn" data-id="'+(s.id||'')+'" data-model="'+s.model+'" title="Remove"><i class="ti ti-trash"></i></button>'
         +'</div>';
     }).join('');
     $('stockList').querySelectorAll('[data-a]').forEach(function(b){
@@ -676,6 +672,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     $('stockList').querySelectorAll('.dbtn').forEach(function(b){
       b.addEventListener('click',function(){
         if(!db)return;
+        if(!confirm('Delete '+b.dataset.model+' from stock?'))return;
         db.collection('stock').doc(b.dataset.id).delete();
       });
     });
@@ -703,6 +700,22 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   }
 
   // ── Export ───────────────────────────────────────────────────────────────
+  $('stockExpBtn').addEventListener('click',function(){
+    if(!stock.length){alert('No stock to export yet.');return;}
+    var wb=XLSX.utils.book_new();
+    var ws=XLSX.utils.aoa_to_sheet([
+      ['Model','Series','Bore (mm)','Stroke (mm)','Qty','Min Stock','Status']
+    ].concat(stock.map(function(s){
+      var mk=s.model.toLowerCase();
+      var minStock=(mapping[mk]&&mapping[mk].minStock)||0;
+      var status=minStock>0&&s.qty<=minStock?'Low stock':'OK';
+      return[s.model,s.series||'',s.bore||'',s.stroke||'',s.qty,minStock||'',status];
+    })));
+    ws['!cols']=[{wch:25},{wch:10},{wch:10},{wch:12},{wch:6},{wch:10},{wch:10}];
+    XLSX.utils.book_append_sheet(wb,ws,'Stock');
+    XLSX.writeFile(wb,'festo-stock-'+new Date().toISOString().slice(0,10)+'.xlsx');
+  });
+
   $('expBtn').addEventListener('click',function(){
     if(!replacements.length){alert('No replacements to export yet.');return;}
     var wb=XLSX.utils.book_new();
