@@ -314,7 +314,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.13 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.14 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -774,13 +774,17 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         var minStock=minStockRaw===''||minStockRaw==='—'?0:parseInt(minStockRaw)||0;
         if(model&&machine){
           var mk=model.toLowerCase();
-          if(!mapping[mk]){mapping[mk]={displayName:model,machines:[],minStock:minStock};}
-          // only update minStock if this row has one
-          if(minStock>0)mapping[mk].minStock=minStock;
+          if(!mapping[mk]){
+            // first row for this model — set displayName and minStock
+            mapping[mk]={displayName:model,machines:[],minStock:minStock};
+          } else if(minStock>0&&mapping[mk].minStock===0){
+            // only update minStock if we haven't set it yet for this model
+            mapping[mk].minStock=minStock;
+          }
           mapping[mk].machines.push({machine:machine,location:location});
           count++;
           var tr=document.createElement('tr');
-          tr.innerHTML='<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td><td>'+(minStock||'—')+'</td>';
+          tr.innerHTML='<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td><td>'+(mapping[mk].minStock||'—')+'</td>';
           $('mBody').appendChild(tr);
         }
       });
