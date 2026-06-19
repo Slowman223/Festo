@@ -109,6 +109,15 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 .mt tr:last-child td{border-bottom:none}
 .dlt{font-size:12px;color:var(--blue-tx);cursor:pointer;background:none;border:none;padding:0;text-decoration:underline;margin-top:6px;display:inline-block}
 .dlt:hover{opacity:.75}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:var(--bg);border-radius:var(--rl);padding:1.25rem;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal h3{font-size:15px;font-weight:500;margin-bottom:8px}
+.modal p{font-size:13px;color:var(--text2);margin-bottom:1rem}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+.modal-cancel{padding:6px 14px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:13px;cursor:pointer}
+.modal-cancel:hover{background:var(--bg2)}
+.modal-confirm{padding:6px 14px;border:0.5px solid var(--red-bd);border-radius:var(--r);background:var(--red-bg);color:var(--red-tx);font-size:13px;cursor:pointer;font-weight:500}
+.modal-confirm:hover{filter:brightness(.95)}
 .search-bar{display:flex;gap:8px;align-items:center;margin-bottom:.75rem}
 .search-input{flex:1;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--bg);color:var(--text)}
 .search-input:focus{outline:none;border-color:var(--border2)}
@@ -266,7 +275,13 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 <div class="panel" id="panel-stock">
   <div class="sec-hdr">
     <h2>Stock on hand</h2>
-    <span class="sec-meta" id="stockMeta">0 units</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="sec-meta" id="stockMeta">0 units</span>
+      <button class="expbtn" id="stockExpBtn"><i class="ti ti-file-spreadsheet"></i> Export</button>
+    </div>
+  </div>
+  <div class="search-bar">
+    <input class="search-input" id="stockSearch" placeholder="Search model…" oninput="filterStock()">
   </div>
   <div id="stockList"></div>
 </div>
@@ -276,6 +291,9 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   <div class="sec-hdr">
     <h2>Replacement log</h2>
     <button class="expbtn" id="expBtn"><i class="ti ti-file-spreadsheet"></i> Export</button>
+  </div>
+  <div class="search-bar">
+    <input class="search-input" id="logSearch" placeholder="Search model or machine…" oninput="filterLog()">
   </div>
   <div id="logArea"></div>
 </div>
@@ -302,7 +320,17 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.08 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.09 — 19 Jun 2026</div>
+<div class="modal-overlay" id="deleteModal" style="display:none">
+  <div class="modal">
+    <h3>Remove from stock?</h3>
+    <p id="deleteModalMsg"></p>
+    <div class="modal-btns">
+      <button class="modal-cancel" id="deleteCancelBtn">Cancel</button>
+      <button class="modal-confirm" id="deleteConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
 </div><!-- .app -->
 
 <script>
@@ -672,8 +700,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     $('stockList').querySelectorAll('.dbtn').forEach(function(b){
       b.addEventListener('click',function(){
         if(!db)return;
-        if(!confirm('Delete '+b.dataset.model+' from stock?'))return;
-        db.collection('stock').doc(b.dataset.id).delete();
+        showDeleteModal(b.dataset.model,b.dataset.id);
       });
     });
   }
@@ -912,6 +939,28 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
   renderStock();
   renderLog();
+
+  // ── Delete modal ──────────────────────────────────────────────────────────
+  var pendingDeleteId=null;
+  function showDeleteModal(model,id){
+    pendingDeleteId=id;
+    $('deleteModalMsg').textContent='This will remove '+model+' from stock. This cannot be undone.';
+    $('deleteModal').style.display='flex';
+  }
+  $('deleteCancelBtn').addEventListener('click',function(){
+    $('deleteModal').style.display='none';
+    pendingDeleteId=null;
+  });
+  $('deleteConfirmBtn').addEventListener('click',function(){
+    if(pendingDeleteId&&db){
+      db.collection('stock').doc(pendingDeleteId).delete();
+    }
+    $('deleteModal').style.display='none';
+    pendingDeleteId=null;
+  });
+  $('deleteModal').addEventListener('click',function(e){
+    if(e.target===$('deleteModal')){$('deleteModal').style.display='none';pendingDeleteId=null;}
+  });
 
 })();
 </script>
