@@ -302,7 +302,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.06 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.07 — 19 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -446,7 +446,6 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       $('mStat').textContent=Object.values(mapping).reduce(function(a,v){return a+v.length;},0)+' mappings saved & synced';
       $('mStat').className='fstat ok';
     }).catch(function(e){alert('Save failed: '+e.message);});
-  }
   }
 
   function renderMappingPreview(){
