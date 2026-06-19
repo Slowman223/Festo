@@ -314,7 +314,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.12 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.13 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -446,19 +446,15 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
           Object.keys(raw).forEach(function(k){
             var v=raw[k];
             if(v&&v.machines&&Array.isArray(v.machines)){
-              // new format {machines:[...], minStock:N}
-              mapping[k]=v.machines;
-              mapping[k].minStock=v.minStock||0;
+              // current format {displayName, machines:[...], minStock:N}
+              mapping[k]={displayName:v.displayName||k,machines:v.machines,minStock:v.minStock||0};
             }else if(Array.isArray(v)){
-              // old format — plain array, no minStock
-              mapping[k]=v;
-              mapping[k].minStock=0;
+              // legacy format — plain array
+              mapping[k]={displayName:k,machines:v,minStock:0};
             }else if(typeof v==='object'){
-              mapping[k]=[v];
-              mapping[k].minStock=0;
+              mapping[k]={displayName:k,machines:[v],minStock:0};
             }else{
-              mapping[k]=[{machine:v,location:''}];
-              mapping[k].minStock=0;
+              mapping[k]={displayName:k,machines:[{machine:v,location:''}],minStock:0};
             }
           });
           renderMappingPreview();
@@ -469,13 +465,9 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
   function saveMappingToFirestore(){
     if(!db){alert('Connect Firebase first.');return;}
-    // store as {machines:[...], minStock:N} so JSON.stringify preserves minStock
-    var toSave={};
-    Object.keys(mapping).forEach(function(k){
-      toSave[k]={machines:mapping[k].slice(),minStock:mapping[k].minStock||0};
-    });
-    db.collection('config').doc('mapping').set({json:JSON.stringify(toSave)}).then(function(){
-      $('mStat').textContent=Object.values(mapping).reduce(function(a,v){return v.length;},0)+' mappings saved & synced';
+    db.collection('config').doc('mapping').set({json:JSON.stringify(mapping)}).then(function(){
+      var total=Object.values(mapping).reduce(function(a,v){return a+(v.machines?v.machines.length:0);},0);
+      $('mStat').textContent=total+' mappings saved & synced';
       $('mStat').className='fstat ok';
     }).catch(function(e){alert('Save failed: '+e.message);});
   }
@@ -484,9 +476,13 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     var body=$('mBody');body.innerHTML='';
     var count=0;
     Object.keys(mapping).forEach(function(m){
-      mapping[m].forEach(function(v){
+      var entry=mapping[m];
+      var machines=entry.machines||[];
+      var displayName=entry.displayName||m;
+      var minStock=entry.minStock||0;
+      machines.forEach(function(v){
         var tr=document.createElement('tr');
-        tr.innerHTML='<td>'+m+'</td><td>'+(v.machine||v)+'</td><td>'+(v.location||'—')+'</td><td>'+(mapping[m].minStock||'—')+'</td>';
+        tr.innerHTML='<td>'+displayName+'</td><td>'+(v.machine||'')+'</td><td>'+(v.location||'—')+'</td><td>'+(minStock||'—')+'</td>';
         body.appendChild(tr);count++;
       });
     });
@@ -579,12 +575,13 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
   function suggestMachine(model){
     var key=model.toLowerCase();
-    var matches=mapping[key];
-    if(!matches){
+    var entry=mapping[key];
+    if(!entry){
       Object.keys(mapping).forEach(function(k){
-        if(!matches&&(key.indexOf(k)!==-1||k.indexOf(key)!==-1))matches=mapping[k];
+        if(!entry&&(key.indexOf(k)!==-1||k.indexOf(key)!==-1))entry=mapping[k];
       });
     }
+    var matches=entry?entry.machines:null;
     $('machBox').style.display='none';
     $('machNoMatch').style.display='none';
     var old=$('machPicker');if(old)old.parentNode.removeChild(old);
@@ -773,13 +770,14 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         var model=String(r[0]||'').trim();
         var machine=String(r[1]||'').trim();
         var location=String(r[2]||'').trim();
+        var minStockRaw=String(r[3]||'').trim();
+        var minStock=minStockRaw===''||minStockRaw==='—'?0:parseInt(minStockRaw)||0;
         if(model&&machine){
           var mk=model.toLowerCase();
-          var minStock=parseInt(r[3]||0)||0;
-          if(!mapping[mk]){mapping[mk]=[];}
-          // store minStock on first entry only (per model not per machine)
-          mapping[mk].push({machine:machine,location:location});
-          mapping[mk].minStock=minStock;
+          if(!mapping[mk]){mapping[mk]={displayName:model,machines:[],minStock:minStock};}
+          // only update minStock if this row has one
+          if(minStock>0)mapping[mk].minStock=minStock;
+          mapping[mk].machines.push({machine:machine,location:location});
           count++;
           var tr=document.createElement('tr');
           tr.innerHTML='<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td><td>'+(minStock||'—')+'</td>';
@@ -867,7 +865,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         if(!parsed.found){showErrorIn(parsed.reason||'No Festo cylinder detected.');return;}
         // check mapping
         var mk=(parsed.model||'').toLowerCase();
-        var inMapping=mapping[mk]||Object.keys(mapping).find(function(k){return mk.indexOf(k)!==-1||k.indexOf(mk)!==-1;});
+        var inMapping=mapping[mk]||Object.keys(mapping).find(function(k){return mk.indexOf(k)!==-1||k.indexOf(mk)!==-1;})?mapping[Object.keys(mapping).find(function(k){return mk.indexOf(k)!==-1||k.indexOf(mk)!==-1;})]:null;
         if(!inMapping){
           showErrorIn('⚠ '+parsed.model+' is not in your mapping list. Add it to the mapping before scanning it in.');
           return;
