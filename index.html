@@ -314,7 +314,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.26 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.27 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -693,7 +693,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       var sub=[s.bore?s.bore+'mm bore':'',s.stroke?s.stroke+'mm stroke':'',s.series].filter(Boolean).join(' · ');
       var mk=s.model.toLowerCase();
       var minStock=(mapping[mk]&&mapping[mk].minStock)||0;
-      var isLow=minStock>0&&s.qty<=minStock;
+      var isLow=minStock>0&&s.qty<minStock;
       var realIdx=stock.indexOf(s);
       return '<div class="si'+(isLow?' low-stock':'')+'">'
         +'<i class="ti ti-cylinder" style="font-size:20px;color:'+(isLow?'var(--red-tx)':'var(--text2)')+';flex-shrink:0"></i>'
@@ -751,7 +751,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       var s=stockMap[row.key];
       var qty=s?s.qty:0;
       var minStock=(mapping[row.key]&&mapping[row.key].minStock)||0;
-      var status=minStock>0&&qty<=minStock?'Low stock':'OK';
+      var status=minStock>0&&qty<minStock?'Low stock':'OK';
       rows.push([row.displayName,s?s.series||'':'',s?s.bore||'':'',s?s.stroke||'':'',qty,minStock||'',status]);
     });
     // also add any stocked items not in mapping
@@ -759,7 +759,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       var mk=s.model.toLowerCase();
       if(!seen[mk]){
         var minStock=(mapping[mk]&&mapping[mk].minStock)||0;
-        var status=minStock>0&&s.qty<=minStock?'Low stock':'OK';
+        var status=minStock>0&&s.qty<minStock?'Low stock':'OK';
         rows.push([s.model,s.series||'',s.bore||'',s.stroke||'',s.qty,minStock||'',status]);
       }
     });
@@ -770,7 +770,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       var mk=r[0].toLowerCase();
       var maxStock=(mapping[mk]&&mapping[mk].maxStock)||0;
       var toOrder=maxStock>0&&qty<maxStock?maxStock-qty:0;
-      var status=minStock>0&&qty<=minStock?'Low stock':'OK';
+      var status=minStock>0&&qty<minStock?'Low stock':'OK';
       return[r[0],qty,minStock||'',maxStock||'',toOrder||'',status];
     })));
     ws['!cols']=[{wch:25},{wch:6},{wch:10},{wch:10},{wch:10},{wch:10}];
