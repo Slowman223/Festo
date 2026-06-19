@@ -314,7 +314,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.17 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.18 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -433,46 +433,33 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       if(d.exists){
         try{
           var data=d.data();
-          // handle both 'json' field (new) and 'data' field (old) and raw string
-          var jsonStr=data.json||data.data||null;
-          if(!jsonStr){
-            // try first value in the document
-            var keys=Object.keys(data);
-            if(keys.length>0)jsonStr=data[keys[0]];
+          var rows=null;
+          // new format: rows field (flat ordered array)
+          if(data.rows){
+            rows=JSON.parse(data.rows);
           }
-          if(typeof jsonStr!=='string')jsonStr=JSON.stringify(jsonStr);
-          var data2=d.data();
-          mapping={};
-          var orderedRows=null;
-          // try new rows format first
-          if(data2.rows){
-            try{orderedRows=JSON.parse(data2.rows);}catch(e){}
-          }
-          // fall back to old json format
-          if(!orderedRows&&data2.json){
-            try{
-              var old=JSON.parse(data2.json);
-              orderedRows=[];
-              Object.keys(old).forEach(function(k){
-                var v=old[k];
-                var machines=v.machines||(Array.isArray(v)?v:[v]);
-                machines.forEach(function(m){
-                  orderedRows.push({key:k,displayName:v.displayName||k,machine:m.machine||m,location:m.location||'',minStock:v.minStock||0});
-                });
+          // old format: json field (keyed object) 
+          else if(data.json){
+            var old=JSON.parse(data.json);
+            rows=[];
+            Object.keys(old).forEach(function(k){
+              var v=old[k];
+              var machines=v.machines||(Array.isArray(v)?v:[v]);
+              machines.forEach(function(m){
+                rows.push({key:k,displayName:v.displayName||k,machine:m.machine||m,location:m.location||'',minStock:v.minStock||0});
               });
-            }catch(e){}
-          }
-          window._mappingRows=orderedRows||[];
-          if(orderedRows){
-            var modelMinStock2={};
-            orderedRows.forEach(function(row){
-              if(row.minStock>0&&!modelMinStock2[row.key])modelMinStock2[row.key]=row.minStock;
-            });
-            orderedRows.forEach(function(row){
-              if(!mapping[row.key]){mapping[row.key]={displayName:row.displayName||row.key,machines:[],minStock:modelMinStock2[row.key]||0};}
-              mapping[row.key].machines.push({machine:row.machine,location:row.location});
             });
           }
+          if(!rows||!rows.length){console.warn('No mapping rows found');return;}
+          // rebuild lookup mapping from rows
+          mapping={};
+          rows.forEach(function(row){
+            if(!mapping[row.key]){mapping[row.key]={displayName:row.displayName||row.key,machines:[],minStock:row.minStock||0};}
+            else if(row.minStock>0&&mapping[row.key].minStock===0){mapping[row.key].minStock=row.minStock;}
+            mapping[row.key].machines.push({machine:row.machine,location:row.location});
+          });
+          // store ordered rows globally for display
+          window._mappingRows=rows;
           renderMappingPreview();
         }catch(e){console.error('Mapping parse error:',e);}
       }
