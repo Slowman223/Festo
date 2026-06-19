@@ -109,6 +109,12 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 .mt tr:last-child td{border-bottom:none}
 .dlt{font-size:12px;color:var(--blue-tx);cursor:pointer;background:none;border:none;padding:0;text-decoration:underline;margin-top:6px;display:inline-block}
 .dlt:hover{opacity:.75}
+.search-bar{display:flex;gap:8px;align-items:center;margin-bottom:.75rem}
+.search-input{flex:1;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--bg);color:var(--text)}
+.search-input:focus{outline:none;border-color:var(--border2)}
+.low-stock{background:var(--red-bg)!important}
+.low-stock .si-name{color:var(--red-tx)}
+.warn-badge{font-size:11px;padding:2px 7px;border-radius:20px;background:var(--red-bg);color:var(--red-tx);font-weight:500;white-space:nowrap;margin-left:4px}
 .mach-pick{margin-bottom:12px}
 .mach-pick-label{font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500}
 .mach-pick-list{display:flex;flex-direction:column;gap:4px}
@@ -278,7 +284,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 <div class="panel" id="panel-mapping">
   <div class="uc">
     <h3>Cylinder → machine mapping</h3>
-    <p>Upload an Excel file with three columns: <strong>Model</strong>, <strong>Machine No.</strong>, <strong>Location</strong>. The app will suggest both when a cylinder is scanned.</p>
+    <p>Upload an Excel file with four columns: <strong>Model</strong>, <strong>Machine No.</strong>, <strong>Location</strong>, <strong>Min Stock</strong>. The app will warn when stock drops below the minimum.</p>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="fbtn"><input type="file" id="mappingFile" accept=".xlsx,.xls,.csv"><i class="ti ti-upload" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>Upload</button>
       <span class="fstat" id="mStat">No file loaded</span>
@@ -289,14 +295,14 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     </div>
     <div id="mPreview" style="display:none;overflow-x:auto;margin-top:.75rem">
       <table class="mt">
-        <thead><tr><th>Model</th><th>Machine No.</th><th>Location</th></tr></thead>
+        <thead><tr><th>Model</th><th>Machine No.</th><th>Location</th><th>Min Stock</th></tr></thead>
         <tbody id="mBody"></tbody>
       </table>
     </div>
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.04 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.06 — 19 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -418,8 +424,9 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
           Object.keys(raw).forEach(function(k){
             var v=raw[k];
             if(Array.isArray(v)){mapping[k]=v;}
-            else if(typeof v==='object'){mapping[k]=[v];}
+            else if(typeof v==='object'&&!Array.isArray(v)){mapping[k]=[v];}
             else{mapping[k]=[{machine:v,location:''}];}
+            mapping[k].minStock=raw[k].minStock||0;
           });
           renderMappingPreview();
         }catch(e){console.error('Mapping parse error:',e);}
@@ -429,10 +436,17 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
   function saveMappingToFirestore(){
     if(!db){alert('Connect Firebase first.');return;}
-    db.collection('config').doc('mapping').set({json:JSON.stringify(mapping)}).then(function(){
+    // build clean serialisable version preserving minStock
+    var toSave={};
+    Object.keys(mapping).forEach(function(k){
+      toSave[k]=mapping[k].slice();
+      toSave[k].minStock=mapping[k].minStock||0;
+    });
+    db.collection('config').doc('mapping').set({json:JSON.stringify(toSave)}).then(function(){
       $('mStat').textContent=Object.values(mapping).reduce(function(a,v){return a+v.length;},0)+' mappings saved & synced';
       $('mStat').className='fstat ok';
     }).catch(function(e){alert('Save failed: '+e.message);});
+  }
   }
 
   function renderMappingPreview(){
@@ -441,7 +455,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     Object.keys(mapping).forEach(function(m){
       mapping[m].forEach(function(v){
         var tr=document.createElement('tr');
-        tr.innerHTML='<td>'+m+'</td><td>'+(v.machine||v)+'</td><td>'+(v.location||'—')+'</td>';
+        tr.innerHTML='<td>'+m+'</td><td>'+(v.machine||v)+'</td><td>'+(v.location||'—')+'</td><td>'+(mapping[m].minStock||'—')+'</td>';
         body.appendChild(tr);count++;
       });
     });
@@ -625,19 +639,29 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   function renderStock(){
     var units=stock.reduce(function(a,s){return a+s.qty;},0);
     $('stockMeta').textContent=units+' unit'+(units!==1?'s':'')+' · '+stock.length+' model'+(stock.length!==1?'s':'');
-    if(!stock.length){
-      $('stockList').innerHTML='<div class="empty"><i class="ti ti-box-off" style="font-size:24px;display:block;margin-bottom:8px"></i>No cylinders in stock yet</div>';
+    filterStock();
+  }
+
+  window.filterStock=function(){
+    var q=($('stockSearch')&&$('stockSearch').value||'').toLowerCase();
+    var filtered=stock.filter(function(s){return !q||s.model.toLowerCase().indexOf(q)!==-1;});
+    if(!filtered.length){
+      $('stockList').innerHTML='<div class="empty"><i class="ti ti-box-off" style="font-size:24px;display:block;margin-bottom:8px"></i>'+(q?'No results':'No cylinders in stock yet')+'</div>';
       return;
     }
-    $('stockList').innerHTML=stock.map(function(s,i){
+    $('stockList').innerHTML=filtered.map(function(s,i){
       var sub=[s.bore?s.bore+'mm bore':'',s.stroke?s.stroke+'mm stroke':'',s.series].filter(Boolean).join(' · ');
-      return '<div class="si">'
-        +'<i class="ti ti-cylinder" style="font-size:20px;color:var(--text2);flex-shrink:0"></i>'
-        +'<div class="si-info"><div class="si-name">'+s.model+'</div><div class="si-sub">'+sub+'</div></div>'
+      var mk=s.model.toLowerCase();
+      var minStock=(mapping[mk]&&mapping[mk].minStock)||0;
+      var isLow=minStock>0&&s.qty<=minStock;
+      var realIdx=stock.indexOf(s);
+      return '<div class="si'+(isLow?' low-stock':'')+'">'
+        +'<i class="ti ti-cylinder" style="font-size:20px;color:'+(isLow?'var(--red-tx)':'var(--text2)')+';flex-shrink:0"></i>'
+        +'<div class="si-info"><div class="si-name">'+s.model+(isLow?'<span class="warn-badge">Low stock</span>':'')+'</div><div class="si-sub">'+sub+'</div></div>'
         +'<div class="sqty">'
-        +'<button class="iq" data-a="dec" data-id="'+(s.id||'')+'" data-qty="'+s.qty+'" data-i="'+i+'"><i class="ti ti-minus"></i></button>'
+        +'<button class="iq" data-a="dec" data-id="'+(s.id||'')+'" data-qty="'+s.qty+'" data-i="'+realIdx+'"><i class="ti ti-minus"></i></button>'
         +'<span>'+s.qty+'</span>'
-        +'<button class="iq" data-a="inc" data-id="'+(s.id||'')+'" data-qty="'+s.qty+'" data-i="'+i+'"><i class="ti ti-plus"></i></button>'
+        +'<button class="iq" data-a="inc" data-id="'+(s.id||'')+'" data-qty="'+s.qty+'" data-i="'+realIdx+'"><i class="ti ti-plus"></i></button>'
         +'</div>'
         +'<button class="dbtn" data-id="'+(s.id||'')+'" title="Remove"><i class="ti ti-trash"></i></button>'
         +'</div>';
@@ -659,14 +683,20 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   }
 
   // ── Log tab ──────────────────────────────────────────────────────────────
-  function renderLog(){
-    if(!replacements.length){
-      $('logArea').innerHTML='<div class="empty"><i class="ti ti-history" style="font-size:24px;display:block;margin-bottom:8px"></i>No replacements logged yet</div>';
+  function renderLog(){filterLog();}
+
+  window.filterLog=function(){
+    var q=($('logSearch')&&$('logSearch').value||'').toLowerCase();
+    var filtered=replacements.filter(function(r){
+      return !q||(r.model&&r.model.toLowerCase().indexOf(q)!==-1)||(r.machine&&r.machine.toLowerCase().indexOf(q)!==-1)||(r.location&&r.location.toLowerCase().indexOf(q)!==-1);
+    });
+    if(!filtered.length){
+      $('logArea').innerHTML='<div class="empty"><i class="ti ti-history" style="font-size:24px;display:block;margin-bottom:8px"></i>'+(q?'No results':'No replacements logged yet')+'</div>';
       return;
     }
     $('logArea').innerHTML='<div class="log-wrap"><table class="lt">'
       +'<thead><tr><th>Date</th><th>Time</th><th>Model</th><th>Machine No.</th><th>Location</th><th>Qty</th></tr></thead>'
-      +'<tbody>'+replacements.map(function(r){
+      +'<tbody>'+filtered.map(function(r){
         return '<tr><td>'+r.date+'</td><td>'+r.time+'</td>'
           +'<td style="font-family:monospace;font-size:12px">'+r.model+'</td>'
           +'<td>'+r.machine+'</td><td>'+(r.location||'—')+'</td><td>'+r.qty+'</td></tr>';
@@ -706,11 +736,14 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         var location=String(r[2]||'').trim();
         if(model&&machine){
           var mk=model.toLowerCase();
-          if(!mapping[mk])mapping[mk]=[];
+          var minStock=parseInt(r[3]||0)||0;
+          if(!mapping[mk]){mapping[mk]=[];}
+          // store minStock on first entry only (per model not per machine)
           mapping[mk].push({machine:machine,location:location});
+          mapping[mk].minStock=minStock;
           count++;
           var tr=document.createElement('tr');
-          tr.innerHTML='<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td>';
+          tr.innerHTML='<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td><td>'+(minStock||'—')+'</td>';
           $('mBody').appendChild(tr);
         }
       });
@@ -729,13 +762,13 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   $('dlTpl').addEventListener('click',function(){
     var wb=XLSX.utils.book_new();
     var ws=XLSX.utils.aoa_to_sheet([
-      ['Model','Machine No.','Location'],
-      ['DNC-40-200-PPV-A','M-001','Line 1 / Press Area'],
-      ['DNC-40-200-PPV-A','M-007','Line 2 / Press Area'],
-      ['DNC-32-100-PPV-A','M-042','Line 3 / Bay 2'],
-      ['ADN-20-50-I-PPS-A','M-017','Assembly / Station 4'],
+      ['Model','Machine No.','Location','Min Stock'],
+      ['DNC-40-200-PPV-A','M-001','Line 1 / Press Area',2],
+      ['DNC-40-200-PPV-A','M-007','Line 2 / Press Area',''],
+      ['DNC-32-100-PPV-A','M-042','Line 3 / Bay 2',3],
+      ['ADN-20-50-I-PPS-A','M-017','Assembly / Station 4',1],
     ]);
-    ws['!cols']=[{wch:25},{wch:15},{wch:25}];
+    ws['!cols']=[{wch:25},{wch:15},{wch:25},{wch:10}];
     XLSX.utils.book_append_sheet(wb,ws,'Mapping');
     XLSX.writeFile(wb,'cylinder-mapping-template.xlsx');
   });
@@ -793,6 +826,13 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         try{parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());}
         catch(e){showErrorIn('Could not parse response — try a clearer photo.');return;}
         if(!parsed.found){showErrorIn(parsed.reason||'No Festo cylinder detected.');return;}
+        // check mapping
+        var mk=(parsed.model||'').toLowerCase();
+        var inMapping=mapping[mk]||Object.keys(mapping).find(function(k){return mk.indexOf(k)!==-1||k.indexOf(mk)!==-1;});
+        if(!inMapping){
+          showErrorIn('⚠ '+parsed.model+' is not in your mapping list. Add it to the mapping before scanning it in.');
+          return;
+        }
         currentResultIn=parsed;
         renderResultIn(parsed);
       })
