@@ -314,7 +314,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.16 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.17 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -481,17 +481,11 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
   function saveMappingToFirestore(){
     if(!db){alert('Connect Firebase first.');return;}
-    // build flat rows array preserving order
-    var rows=[];
-    var seen={};
-    // we need mappingRows — rebuild from mapping in display order if not available
-    var keys=Object.keys(mapping);
-    keys.forEach(function(k){
-      var entry=mapping[k];
-      (entry.machines||[]).forEach(function(m){
-        rows.push({key:k,displayName:entry.displayName||k,machine:m.machine,location:m.location,minStock:entry.minStock||0});
-      });
+    // always use the original upload row order stored in window._mappingRows
+    var rows=(window._mappingRows||[]).map(function(r){
+      return {key:r.key,displayName:r.displayName,machine:r.machine,location:r.location,minStock:mapping[r.key]?mapping[r.key].minStock||0:0};
     });
+    if(!rows.length){alert('No mapping loaded. Please upload your spreadsheet first.');return;}
     db.collection('config').doc('mapping').set({rows:JSON.stringify(rows)}).then(function(){
       $('mStat').textContent=rows.length+' rows saved & synced';
       $('mStat').className='fstat ok';
@@ -509,28 +503,13 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   function renderMappingPreview(){
     var body=$('mBody');body.innerHTML='';
     var count=0;
-    // use flat rows from Firestore if available for correct order
-    var rows=window._mappingRows||[];
-    if(rows.length){
-      rows.forEach(function(row){
-        var minStock=(mapping[row.key]&&mapping[row.key].minStock)||0;
-        var tr=document.createElement('tr');
-        tr.innerHTML='<td>'+(row.displayName||row.key)+'</td><td>'+row.machine+'</td><td>'+(row.location||'—')+'</td><td>'+(minStock||'—')+'</td>';
-        body.appendChild(tr);count++;
-      });
-    }else{
-      Object.keys(mapping).forEach(function(m){
-        var entry=mapping[m];
-        var machines=entry.machines||[];
-        var displayName=entry.displayName||m;
-        var minStock=entry.minStock||0;
-        machines.forEach(function(v){
-          var tr=document.createElement('tr');
-          tr.innerHTML='<td>'+displayName+'</td><td>'+(v.machine||'')+'</td><td>'+(v.location||'—')+'</td><td>'+(minStock||'—')+'</td>';
-          body.appendChild(tr);count++;
-        });
-      });
-    }
+    // always render from _mappingRows for correct order
+    (window._mappingRows||[]).forEach(function(row){
+      var minStock=row.minStock||0;
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td>'+(row.displayName||row.key)+'</td><td>'+row.machine+'</td><td>'+(row.location||'—')+'</td><td>'+(minStock||'—')+'</td>';
+      body.appendChild(tr);count++;
+    });
     $('mPreview').style.display=count?'block':'none';
     var total=count;
     $('mStat').textContent=total+' mappings loaded';
