@@ -45,8 +45,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .scan-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .preview-img{max-height:180px;max-width:100%;border-radius:var(--r);margin:0 auto .75rem;border:0.5px solid var(--border);display:block}
 .manual-row{text-align:center;margin-bottom:1rem}
-.manual-btn{font-size:12px;padding:4px 12px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text2);cursor:pointer}
-.manual-btn:hover{color:var(--text);background:var(--bg2)}
+.manual-btn{font-size:15px;padding:2rem 1rem;border:0.5px dashed var(--border2);border-radius:var(--rl);background:var(--bg2);color:var(--text2);cursor:pointer;width:100%;text-align:center;display:block}
+.manual-btn:hover{color:var(--text);background:var(--bg3)}
+.sm-btn{font-size:12px;padding:6px 14px;border-style:solid;border-radius:var(--r);background:var(--bg);color:var(--text2)}
 .manual-box{display:none;margin-bottom:1rem}
 .manual-box .inner{display:flex;gap:8px}
 .msg{display:flex;align-items:flex-start;gap:10px;padding:.75rem 1rem;border-radius:var(--r);font-size:14px;margin-bottom:1rem}
@@ -146,7 +147,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
 <!-- STOCK OUT -->
 <div class="panel active" id="panel-out">
-  <div class="scan-zone" id="szOut">
+  <div class="scan-zone" id="szOut" style="padding:1.25rem">
     <input type="file" id="fileOut" accept="image/*" capture="environment">
     <div id="promptOut">
       <i class="ti ti-arrow-up" style="font-size:28px;color:var(--text3);display:block;margin-bottom:.5rem"></i>
@@ -158,9 +159,9 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       <div style="font-size:13px;color:var(--text2)">Tap to use a different photo</div>
     </div>
   </div>
-  <div class="manual-row" style="display:flex;gap:8px;justify-content:center">
-    <button class="manual-btn" id="qrScanOutBtn"><i class="ti ti-qrcode" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>Scan QR code</button>
-    <button class="manual-btn" id="manualOutBtn"><i class="ti ti-keyboard" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>Enter manually</button>
+  <div class="manual-row" style="display:flex;flex-direction:column;gap:8px">
+    <button class="manual-btn" id="qrScanOutBtn"><i class="ti ti-qrcode" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>Scan QR code stock out</button>
+    <button class="manual-btn sm-btn" id="manualOutBtn"><i class="ti ti-keyboard" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>Enter manually</button>
   </div>
   <div class="manual-box" id="manualOutBox">
     <div class="inner">
@@ -203,7 +204,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
 <!-- STOCK IN -->
 <div class="panel" id="panel-in">
-  <div class="scan-zone" id="szIn">
+  <div class="scan-zone" id="szIn" style="padding:1.25rem">
     <input type="file" id="fileIn" accept="image/*" capture="environment">
     <div id="promptIn">
       <i class="ti ti-arrow-down" style="font-size:28px;color:var(--text3);display:block;margin-bottom:.5rem"></i>
@@ -215,9 +216,9 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       <div style="font-size:13px;color:var(--text2)">Tap to use a different photo</div>
     </div>
   </div>
-  <div class="manual-row" style="display:flex;gap:8px;justify-content:center">
-    <button class="manual-btn" id="qrScanInBtn"><i class="ti ti-qrcode" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>Scan QR code</button>
-    <button class="manual-btn" id="manualInBtn"><i class="ti ti-keyboard" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>Enter manually</button>
+  <div class="manual-row" style="display:flex;flex-direction:column;gap:8px">
+    <button class="manual-btn" id="qrScanInBtn"><i class="ti ti-qrcode" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>Scan QR code stock in</button>
+    <button class="manual-btn sm-btn" id="manualInBtn"><i class="ti ti-keyboard" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>Enter manually</button>
   </div>
   <div class="manual-box" id="manualInBox">
     <div class="inner">
@@ -350,7 +351,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.48 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.52 — 20 Jun 2026</div>
 </div>
 
 <script>
@@ -913,7 +914,7 @@ function startQRScan(onResult){
       video.play();
       show('qrOverlay');
       scanFrame();
-    }).catch(function(e){alert('Camera access denied: '+e.message);});
+    }).catch(function(e){hide('qrOverlay');});
   });
 }
 
