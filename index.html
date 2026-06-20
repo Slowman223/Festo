@@ -338,7 +338,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.10 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.11 — 20 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -456,16 +456,27 @@ function callGroq(base64, mediaType, onSuccess, onError){
       return;
     }
     var raw = (r.data.choices && r.data.choices[0] && r.data.choices[0].message && r.data.choices[0].message.content) || '';
-    // Extract JSON — find first { to last }
     console.log('RAW:', raw);
-    var start = raw.indexOf('{');
-    var end = raw.lastIndexOf('}');
-    if(start === -1 || end === -1){ onError('No JSON in response. Raw: ' + raw.slice(0,200)); return; }
-    var jsonStr = raw.slice(start, end + 1);
-    var parsed;
-    try{ parsed = JSON.parse(jsonStr); }
-    catch(e){ onError('Parse error: ' + e.message + '. JSON: ' + jsonStr.slice(0,300)); return; }
-    onSuccess(parsed);
+    // strip think tags and markdown
+    var cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json|```/gi,'').trim();
+    // try JSON parse to get model field
+    var model = null;
+    var js = cleaned.indexOf('{'), je = cleaned.lastIndexOf('}');
+    if(js !== -1 && je !== -1){
+      try{
+        var p = JSON.parse(cleaned.slice(js, je+1));
+        model = p.model || p.Model || p.model_number || null;
+      }catch(e){}
+    }
+    // fallback: regex for Festo model pattern
+    if(!model){
+      var m = cleaned.match(/([A-Z]{2,8}-\d{2,3}-[\w-]{3,})/i);
+      if(m) model = m[1];
+    }
+    if(!model){ onError('No model number found. Response: ' + raw.slice(0,200)); return; }
+    model = model.toUpperCase().replace(/[.,;:!?\s]+$/,'');
+    console.log('MODEL:', model);
+    onSuccess(deriveSpecs({found:true, model:model, confidence:'high'}));
   })
   .catch(function(e){ onError('Network error: ' + e.message); });
 }
