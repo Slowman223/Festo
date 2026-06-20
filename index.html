@@ -314,7 +314,18 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.28 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.29 — 19 Jun 2026</div>
+<div class="modal-overlay" id="logDeleteModal" style="display:none">
+  <div class="modal">
+    <h3>Delete log entry?</h3>
+    <p id="logDeleteMsg">Enter password to delete this entry.</p>
+    <input type="password" id="logDeletePw" placeholder="Password" style="width:100%;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--bg2);color:var(--text);margin-bottom:.75rem">
+    <div class="modal-btns">
+      <button class="modal-cancel" id="logDeleteCancelBtn">Cancel</button>
+      <button class="modal-confirm" id="logDeleteConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -728,10 +739,10 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       return;
     }
     window._logDeleteHandler=function(id){
-      var pw=prompt('Enter password to delete this entry:');
-      if(pw!=='1921'){if(pw!==null)alert('Incorrect password.');return;}
-      if(!db)return;
-      db.collection('replacements').doc(id).delete();
+      window._pendingLogDeleteId=id;
+      $('logDeletePw').value='';
+      $('logDeleteModal').style.display='flex';
+      setTimeout(function(){$('logDeletePw').focus();},100);
     };
     $('logArea').innerHTML='<div class="log-wrap"><table class="lt">'
       +'<thead><tr><th>Date</th><th>Time</th><th>Model</th><th>Machine No.</th><th>Location</th><th>Qty</th><th></th></tr></thead>'
@@ -786,17 +797,23 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     var ws=XLSX.utils.aoa_to_sheet([['Model','Qty','Min Stock','Max Stock','To Order','Status']].concat(stockRows));
     ws['!cols']=[{wch:25},{wch:6},{wch:10},{wch:10},{wch:10},{wch:10}];
     // colour the Status column
+    // Apply cell styles — requires cellStyles:true in writeFile
     stockRows.forEach(function(r,i){
       var cellRef=XLSX.utils.encode_cell({r:i+1,c:5});
       if(!ws[cellRef])return;
       var isLow=r[5]==='Low stock';
       ws[cellRef].s={
-        fill:{fgColor:{rgb:isLow?'FFCCCC':'CCFFCC'},patternType:'solid'},
-        font:{color:{rgb:isLow?'990000':'006600'},bold:true}
+        fill:{patternType:'solid',fgColor:{rgb:isLow?'FFCCCC':'CCFFCC'}},
+        font:{bold:true,color:{rgb:isLow?'CC0000':'006600'}}
       };
     });
+    // also colour header row
+    for(var c=0;c<6;c++){
+      var hRef=XLSX.utils.encode_cell({r:0,c:c});
+      if(ws[hRef])ws[hRef].s={fill:{patternType:'solid',fgColor:{rgb:'DDDDDD'}},font:{bold:true}};
+    }
     XLSX.utils.book_append_sheet(wb,ws,'Stock');
-    XLSX.writeFile(wb,'festo-stock-'+new Date().toISOString().slice(0,10)+'.xlsx');
+    XLSX.writeFile(wb,'festo-stock-'+new Date().toISOString().slice(0,10)+'.xlsx',{cellStyles:true});
   });
 
   $('expBtn').addEventListener('click',function(){
@@ -1004,6 +1021,33 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
   renderStock();
   renderLog();
+
+  // ── Log delete modal ─────────────────────────────────────────────────────
+  var _pendingLogDeleteId=null;
+  $('logDeleteCancelBtn').addEventListener('click',function(){
+    $('logDeleteModal').style.display='none';
+    $('logDeletePw').value='';
+  });
+  $('logDeleteConfirmBtn').addEventListener('click',function(){
+    if($('logDeletePw').value!=='1921'){
+      $('logDeletePw').value='';
+      $('logDeletePw').placeholder='Incorrect — try again';
+      $('logDeletePw').focus();
+      return;
+    }
+    if(window._pendingLogDeleteId&&db){
+      db.collection('replacements').doc(window._pendingLogDeleteId).delete();
+    }
+    $('logDeleteModal').style.display='none';
+    $('logDeletePw').value='';
+    window._pendingLogDeleteId=null;
+  });
+  $('logDeletePw').addEventListener('keydown',function(e){
+    if(e.key==='Enter')$('logDeleteConfirmBtn').click();
+  });
+  $('logDeleteModal').addEventListener('click',function(e){
+    if(e.target===$('logDeleteModal')){$('logDeleteModal').style.display='none';$('logDeletePw').value='';}
+  });
 
   // ── Delete modal ──────────────────────────────────────────────────────────
   var pendingDeleteId=null;
