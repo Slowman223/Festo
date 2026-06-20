@@ -333,7 +333,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.43 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.44 — 20 Jun 2026</div>
 </div>
 
 <script>
@@ -464,7 +464,7 @@ function aiScan(file,mediaType,msgTxtId,msgId,errTxtId,errId,onResult){
     if(err){hide(msgId);$(errTxtId).textContent='Could not read image.';show(errId);return;}
     callGroq(b64,mediaType,function(r){
       hide(msgId);
-      if(!r.model){$(errTxtId).textContent='Could not read label. Use manual entry below.';show(errId);return;}
+      if(!r.model){$(errTxtId).textContent='Could not read label. Use manual entry above.';show(errId);return;}
       onResult(r);
     },function(msg){hide(msgId);$(errTxtId).textContent=msg;show(errId);});
   });
@@ -478,12 +478,14 @@ function setupScan(fileId,promptId,prevWrapId,prevImgId,msgId,msgTxtId,errId,err
     hide(promptId); show(prevWrapId); hide(errId); hide(resultId);
     $(msgTxtId).textContent='Reading…'; flex(msgId);
     var mediaType=(file.type&&file.type.startsWith('image/'))?file.type:'image/jpeg';
+    console.log('BarcodeDetector supported:', 'BarcodeDetector' in window);
     // Try QR code detection first (browser native, fast, no AI needed)
     if('BarcodeDetector' in window){
       var bd=new BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13']});
       createImageBitmap(file).then(function(bitmap){
         return bd.detect(bitmap);
       }).then(function(barcodes){
+        console.log('Barcodes found:', barcodes.length, barcodes.map(function(b){return b.rawValue;}));
         if(barcodes.length>0){
           hide(msgId);
           var code=barcodes[0].rawValue.trim().toUpperCase();
