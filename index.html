@@ -333,7 +333,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.34 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.35 — 20 Jun 2026</div>
 </div>
 
 <script>
@@ -411,7 +411,15 @@ function callGroq(base64,mediaType,onSuccess,onError){
   })
   .then(function(res){return res.json().then(function(d){return{ok:res.ok,data:d};});})
   .then(function(r){
-    if(!r.ok){onError(r.data&&r.data.error?r.data.error.message:'API error');return;}
+    if(!r.ok){
+      var errMsg=r.data&&r.data.error?r.data.error.message:'API error';
+      if(r.data&&r.data.error&&(r.data.error.code==='rate_limit_exceeded'||errMsg.toLowerCase().indexOf('rate limit')!==-1)){
+        onError('Rate limit — auto-retrying in 5 seconds…');
+        setTimeout(function(){callGroq(base64,mediaType,onSuccess,onError);},5000);
+        return;
+      }
+      onError(errMsg); return;
+    }
     var raw=(r.data.choices&&r.data.choices[0]&&r.data.choices[0].message&&r.data.choices[0].message.content)||'';
     var usage=r.data.usage||{};
     console.log('TOKENS — prompt:',usage.prompt_tokens,'completion:',usage.completion_tokens,'total:',usage.total_tokens);
