@@ -338,7 +338,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.12 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.13 — 20 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -469,11 +469,10 @@ function callGroq(base64, mediaType, onSuccess, onError){
 
     // ── Extraction pipeline ──────────────────────────────────────────────────
     // Step 1: strip Qwen <think> blocks
-    var text = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    var text = raw.replace(/<think>[^]*?<\/think>/gi, '').trim();
 
     // Step 2: strip markdown code fences
-    text = text.replace(/```[a-z]*
-?/gi, '').replace(/```/g, '').trim();
+    text = text.replace(/```[a-z]*/gi, '').replace(/```/g, '').trim();
 
     // Step 3: if it looks like JSON, pull the "model" field
     var model = null;
