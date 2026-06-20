@@ -314,7 +314,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.27 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.28 — 19 Jun 2026</div>
 <div class="modal-overlay" id="deleteModal" style="display:none">
   <div class="modal">
     <h3>Remove from stock?</h3>
@@ -727,13 +727,23 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       $('logArea').innerHTML='<div class="empty"><i class="ti ti-history" style="font-size:24px;display:block;margin-bottom:8px"></i>No replacements logged yet</div>';
       return;
     }
+    window._logDeleteHandler=function(id){
+      var pw=prompt('Enter password to delete this entry:');
+      if(pw!=='1921'){if(pw!==null)alert('Incorrect password.');return;}
+      if(!db)return;
+      db.collection('replacements').doc(id).delete();
+    };
     $('logArea').innerHTML='<div class="log-wrap"><table class="lt">'
-      +'<thead><tr><th>Date</th><th>Time</th><th>Model</th><th>Machine No.</th><th>Location</th><th>Qty</th></tr></thead>'
+      +'<thead><tr><th>Date</th><th>Time</th><th>Model</th><th>Machine No.</th><th>Location</th><th>Qty</th><th></th></tr></thead>'
       +'<tbody>'+filtered.map(function(r){
         return '<tr><td>'+r.date+'</td><td>'+r.time+'</td>'
           +'<td style="font-family:monospace;font-size:12px">'+r.model+'</td>'
-          +'<td>'+r.machine+'</td><td>'+(r.location||'—')+'</td><td>'+r.qty+'</td></tr>';
+          +'<td>'+r.machine+'</td><td>'+(r.location||'—')+'</td><td>'+r.qty+'</td>'
+          +'<td><button class="dbtn log-del" data-id="'+r.id+'" title="Delete"><i class="ti ti-trash"></i></button></td></tr>';
       }).join('')+'</tbody></table></div>';
+    document.querySelectorAll('.log-del').forEach(function(b){
+      b.addEventListener('click',function(){window._logDeleteHandler(b.dataset.id);});
+    });
   }
 
   // ── Export ───────────────────────────────────────────────────────────────
@@ -764,7 +774,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       }
     });
     if(!rows.length){alert('No mapping loaded — upload your mapping first.');return;}
-    var ws=XLSX.utils.aoa_to_sheet([['Model','Qty','Min Stock','Max Stock','To Order','Status']].concat(rows.map(function(r){
+    var stockRows=rows.map(function(r){
       var qty=r[4];
       var minStock=r[5]||0;
       var mk=r[0].toLowerCase();
@@ -772,8 +782,19 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
       var toOrder=maxStock>0&&qty<maxStock?maxStock-qty:0;
       var status=minStock>0&&qty<minStock?'Low stock':'OK';
       return[r[0],qty,minStock||'',maxStock||'',toOrder||'',status];
-    })));
+    });
+    var ws=XLSX.utils.aoa_to_sheet([['Model','Qty','Min Stock','Max Stock','To Order','Status']].concat(stockRows));
     ws['!cols']=[{wch:25},{wch:6},{wch:10},{wch:10},{wch:10},{wch:10}];
+    // colour the Status column
+    stockRows.forEach(function(r,i){
+      var cellRef=XLSX.utils.encode_cell({r:i+1,c:5});
+      if(!ws[cellRef])return;
+      var isLow=r[5]==='Low stock';
+      ws[cellRef].s={
+        fill:{fgColor:{rgb:isLow?'FFCCCC':'CCFFCC'},patternType:'solid'},
+        font:{color:{rgb:isLow?'990000':'006600'},bold:true}
+      };
+    });
     XLSX.utils.book_append_sheet(wb,ws,'Stock');
     XLSX.writeFile(wb,'festo-stock-'+new Date().toISOString().slice(0,10)+'.xlsx');
   });
