@@ -333,7 +333,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.42 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.43 — 20 Jun 2026</div>
 </div>
 
 <script>
@@ -392,7 +392,7 @@ function callGroq(base64,mediaType,onSuccess,onError){
     if(modelList.indexOf(name)===-1&&/[A-Z]{2,}-\d+/.test(name)) modelList.push(name);
   });
 
-  var prompt='Look at this image. It may contain either a QR code or a product label. If there is a QR code, decode it and reply with the text it contains. If there is a product label, read the part number or model number printed on it. Reply with ONLY the part number or QR code text, nothing else.';
+  var prompt='Look at the product label in the image. Read the part number or model number printed on the label. This could be a Festo cylinder (e.g. DSBC-40-300-PPVA-N3), a THK bearing/rail, or a Rexroth part. Reply with ONLY the part number, nothing else.';
 
   fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',
@@ -457,23 +457,48 @@ document.querySelectorAll('.tab').forEach(function(t){
   });
 });
 
+// ── AI scan helper ───────────────────────────────────────────────────────────
+function aiScan(file,mediaType,msgTxtId,msgId,errTxtId,errId,onResult){
+  $(msgTxtId).textContent='Identifying part…';
+  toBase64(file,function(err,b64){
+    if(err){hide(msgId);$(errTxtId).textContent='Could not read image.';show(errId);return;}
+    callGroq(b64,mediaType,function(r){
+      hide(msgId);
+      if(!r.model){$(errTxtId).textContent='Could not read label. Use manual entry below.';show(errId);return;}
+      onResult(r);
+    },function(msg){hide(msgId);$(errTxtId).textContent=msg;show(errId);});
+  });
+}
+
 // ── Scan helper ───────────────────────────────────────────────────────────────
 function setupScan(fileId,promptId,prevWrapId,prevImgId,msgId,msgTxtId,errId,errTxtId,resultId,onResult){
   $(fileId).addEventListener('change',function(e){
     var file=e.target.files[0]; if(!file) return;
     $(prevImgId).src=URL.createObjectURL(file);
     hide(promptId); show(prevWrapId); hide(errId); hide(resultId);
-    $(msgTxtId).textContent='Reading label…'; flex(msgId);
+    $(msgTxtId).textContent='Reading…'; flex(msgId);
     var mediaType=(file.type&&file.type.startsWith('image/'))?file.type:'image/jpeg';
-    toBase64(file,function(err,b64){
-      if(err){hide(msgId);$(errTxtId).textContent='Could not read image.';show(errId);return;}
-      $(msgTxtId).textContent='Identifying cylinder…';
-      callGroq(b64,mediaType,function(r){
-        hide(msgId);
-        if(!r.model){$(errTxtId).textContent='Could not read label. Use manual entry below.';show(errId);return;}
-        onResult(r);
-      },function(msg){hide(msgId);$(errTxtId).textContent=msg;show(errId);});
-    });
+    // Try QR code detection first (browser native, fast, no AI needed)
+    if('BarcodeDetector' in window){
+      var bd=new BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13']});
+      createImageBitmap(file).then(function(bitmap){
+        return bd.detect(bitmap);
+      }).then(function(barcodes){
+        if(barcodes.length>0){
+          hide(msgId);
+          var code=barcodes[0].rawValue.trim().toUpperCase();
+          onResult(deriveSpecs({found:true,model:code,confidence:'high'}));
+        } else {
+          // No barcode found - fall back to AI
+          aiScan(file,mediaType,msgTxtId,msgId,errTxtId,errId,onResult);
+        }
+      }).catch(function(){
+        aiScan(file,mediaType,msgTxtId,msgId,errTxtId,errId,onResult);
+      });
+    } else {
+      // BarcodeDetector not supported - go straight to AI
+      aiScan(file,mediaType,msgTxtId,msgId,errTxtId,errId,onResult);
+    }
   });
 }
 
