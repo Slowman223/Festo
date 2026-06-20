@@ -333,7 +333,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.26 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.27 — 20 Jun 2026</div>
 </div>
 
 <script>
@@ -355,8 +355,7 @@ function renderBadge(el,conf){
 }
 
 function renderSpecs(el,r){
-  el.innerHTML=[['Bore',r.bore_mm?r.bore_mm+' mm':'—'],['Stroke',r.stroke_mm?r.stroke_mm+' mm':'—'],['Mount',r.mount||'—'],['Cushioning',r.cushioning||'—']]
-    .concat(r.notes?[['Notes',r.notes]]:[])
+  el.innerHTML=[['Bore',r.bore_mm?r.bore_mm+' mm':'—'],['Stroke',r.stroke_mm?r.stroke_mm+' mm':'—']]
     .map(function(s){return '<div><div class="sl">'+s[0]+'</div><div class="sv">'+s[1]+'</div></div>';}).join('');
 }
 
