@@ -333,7 +333,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.36 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.38 — 20 Jun 2026</div>
 </div>
 
 <script>
@@ -414,14 +414,19 @@ function callGroq(base64,mediaType,onSuccess,onError){
     if(!r.ok){
       var errMsg=r.data&&r.data.error?r.data.error.message:'API error';
       if(r.data&&r.data.error&&(r.data.error.code==='rate_limit_exceeded'||errMsg.toLowerCase().indexOf('rate limit')!==-1)){
-        onError('Rate limit — auto-retrying in 5 seconds…');
-        setTimeout(function(){callGroq(base64,mediaType,onSuccess,onError);},5000);
+        var retries=(callGroq._retries||0)+1;
+        callGroq._retries=retries;
+        var wait=Math.min(5000*retries,30000);
+        onError('Rate limit — auto-retrying in '+(wait/1000)+' seconds…');
+        setTimeout(function(){callGroq(base64,mediaType,onSuccess,onError);},wait);
         return;
       }
+      callGroq._retries=0;
       onError(errMsg); return;
     }
     var raw=(r.data.choices&&r.data.choices[0]&&r.data.choices[0].message&&r.data.choices[0].message.content)||'';
 
+    callGroq._retries=0;
     var text=raw.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```[a-z]*/gi,'').replace(/```/g,'').trim();
     var model=null;
     // exact match against mapping list
