@@ -338,7 +338,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.08 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.09 — 20 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -438,7 +438,7 @@ function callGroq(base64, mediaType, onSuccess, onError){
       'Authorization': 'Bearer ' + key
     },
     body: JSON.stringify({
-      model: 'llama-3.2-11b-vision-preview',
+      model: 'qwen/qwen3.6-27b',
       max_tokens: 500,
       temperature: 0.1,
       messages: [
