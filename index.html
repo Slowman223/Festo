@@ -294,12 +294,10 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 <!-- SETTINGS -->
 <div class="panel" id="panel-settings">
   <div class="card">
-    <h3><i class="ti ti-brand-groq" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>Groq API key</h3>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Required for photo scanning. Free at console.groq.com</p>
-    <div class="setting-row">
-      <input type="password" class="setting-input" id="apiKey" placeholder="gsk_..." autocomplete="off">
-      <button class="sbtn" id="apiSave">Save</button>
-    </div>
+    <h3><i class="ti ti-camera" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>Scanning</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Photo scanning uses the Claude API — no key needed, handled automatically.</p>
+    <div style="font-size:13px;color:var(--green-tx)">✓ Ready to scan</div>
+    <input type="hidden" id="apiKey"><button id="apiSave" style="display:none"></button>
   </div>
   <div class="card">
     <h3><i class="ti ti-cloud" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>Firebase</h3>
@@ -338,7 +336,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.19 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.20 — 20 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -428,94 +426,51 @@ function deriveSpecs(r){
 
 
 function callGroq(base64, mediaType, onSuccess, onError){
-  var key = localStorage.getItem('festo_api_key') || ($('apiKey').value || '').trim();
-  if(!key){ onError('Enter your Groq API key in the Settings tab.'); return; }
-
-  // We ask for the model number only as plain text — simplest possible request.
-  // Qwen may still wrap it in thinking/JSON, so we handle all those cases in extraction.
-  var prompt = '/no_think Look at this image. Find the Festo product label (white sticker with FESTO logo). '
-    + 'Read the model number printed in bold on the label. '
-    + 'Reply with ONLY the model number. Nothing else. '
-    + 'Example: DSBC-40-300-PPVA-N3';
-
-  fetch('https://api.groq.com/openai/v1/chat/completions', {
+  // Uses Anthropic Claude API - best vision model for label reading
+  fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + key
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-      max_tokens: 500,
-      temperature: 0,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'image_url', image_url: { url: 'data:' + mediaType + ';base64,' + base64 } },
-            { type: 'text', text: 'Look at the white Festo label. Read ONLY the bold model number text character by character. Output just the model number with dashes exactly as printed.' }
-          ]
-        }
-      ]
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 100,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+          { type: 'text', text: 'What is the Festo model number on the label in this image? Reply with ONLY the model number, nothing else. Example: DSBC-40-300-PPVA-N3' }
+        ]
+      }]
     })
   })
   .then(function(res){ return res.json().then(function(d){ return {ok:res.ok, data:d}; }); })
   .then(function(r){
     if(!r.ok){
-      onError(r.data && r.data.error ? r.data.error.message : 'API error ' + r.data.error.status);
+      onError(r.data && r.data.error ? r.data.error.message : 'API error');
       return;
     }
-
-    var raw = (r.data.choices && r.data.choices[0] && r.data.choices[0].message
-               && r.data.choices[0].message.content) || '';
-
-    // ── Extraction pipeline ──────────────────────────────────────────────────
-    // Step 1: strip Qwen <think> blocks
-    var text = raw.replace(/<think>[^]*?<\/think>/gi, '').trim();
-
-    // Step 2: strip markdown code fences
-    text = text.replace(/```[a-z]*/gi, '').replace(/```/g, '').trim();
-
-    // Step 3: if it looks like JSON, pull the "model" field
+    var raw = (r.data.content && r.data.content[0] && r.data.content[0].text) || '';
+    console.log('RAW:', raw);
+    var text = raw.trim();
+    // Extract model number
     var model = null;
-    if(text.indexOf('{') !== -1){
-      try{
-        var js = text.indexOf('{'), je = text.lastIndexOf('}');
-        var obj = JSON.parse(text.slice(js, je + 1));
-        model = obj.model || obj.Model || obj.model_number || obj.modelNumber
-              || obj['Model Number'] || obj.part_number || null;
-      }catch(e){}
+    var patterns = [
+      /([A-Z]{2,8}-\d{1,3}-\d{2,4}-[\w-]+)/i,
+      /([A-Z]{2,8}-\d{1,3}-[\w-]{3,})/i
+    ];
+    for(var i=0;i<patterns.length;i++){
+      var m=text.match(patterns[i]);
+      if(m){model=m[1];break;}
     }
-
-    // Step 4: regex — Festo model numbers follow pattern LETTERS-DIGITS-ALPHADASH
-    // Covers: DSBC-40-300-PPVA-N3, ADN-25-150-A-P-A, DFM-20-20-P-A-GF, etc.
-    if(!model){
-      var patterns = [
-        /([A-Z]{2,8}-\d{1,3}-\d{2,4}-[\w-]+)/i,   // 4-part: DSBC-40-300-PPVA-N3
-        /([A-Z]{2,8}-\d{1,3}-[\w-]{3,})/i,          // 3-part: ADN-25-150-A-P-A
-        /([A-Z]{2,8}-[\d]{2,3}-[\w-]+)/i             // general
-      ];
-      for(var pi = 0; pi < patterns.length; pi++){
-        var m = text.match(patterns[pi]);
-        if(m){ model = m[1]; break; }
-      }
+    if(!model && text.length > 3 && text.indexOf('-') !== -1){
+      model = text.replace(/[^A-Z0-9\-]/gi,'').toUpperCase();
     }
-
-    // Step 5: last resort — clean the whole response and see if it IS a model number
-    if(!model){
-      var candidate = text.replace(/[^A-Z0-9\-]/gi,'').toUpperCase();
-      if(candidate.length >= 8 && candidate.indexOf('-') !== -1) model = candidate;
-    }
-
-    if(!model){
-      onError('Could not find a model number. Is the label clearly visible? Response: ' + raw.slice(0,150));
-      return;
-    }
-
-    // Clean up — uppercase, trim trailing punctuation/spaces
+    if(!model){ onError('No model number found. Response: ' + raw.slice(0,150)); return; }
     model = model.toUpperCase().replace(/[\s.,;:!?'"]+$/,'');
-
-    onSuccess(deriveSpecs({found: true, model: model, confidence: 'high'}));
+    onSuccess(deriveSpecs({found:true, model:model, confidence:'high'}));
   })
   .catch(function(e){ onError('Network error: ' + e.message); });
 }
