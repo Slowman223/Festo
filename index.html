@@ -333,7 +333,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.44 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.45 — 20 Jun 2026</div>
 </div>
 
 <script>
@@ -457,6 +457,36 @@ document.querySelectorAll('.tab').forEach(function(t){
   });
 });
 
+// ── jsQR loader + QR decoder ─────────────────────────────────────────────────
+var jsqrLoaded=false;
+function loadJsQR(cb){
+  if(jsqrLoaded&&window.jsQR){cb();return;}
+  var s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+  s.onload=function(){jsqrLoaded=true;cb();};
+  s.onerror=function(){cb();};
+  document.head.appendChild(s);
+}
+
+function tryQR(file, cb){
+  loadJsQR(function(){
+    if(!window.jsQR){cb(null);return;}
+    var img=new Image();
+    img.onload=function(){
+      var canvas=document.createElement('canvas');
+      canvas.width=img.width;
+      canvas.height=img.height;
+      var ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0);
+      var data=ctx.getImageData(0,0,canvas.width,canvas.height);
+      var result=jsQR(data.data,data.width,data.height);
+      cb(result?result.data:null);
+    };
+    img.onerror=function(){cb(null);};
+    img.src=URL.createObjectURL(file);
+  });
+}
+
 // ── AI scan helper ───────────────────────────────────────────────────────────
 function aiScan(file,mediaType,msgTxtId,msgId,errTxtId,errId,onResult){
   $(msgTxtId).textContent='Identifying part…';
@@ -478,29 +508,15 @@ function setupScan(fileId,promptId,prevWrapId,prevImgId,msgId,msgTxtId,errId,err
     hide(promptId); show(prevWrapId); hide(errId); hide(resultId);
     $(msgTxtId).textContent='Reading…'; flex(msgId);
     var mediaType=(file.type&&file.type.startsWith('image/'))?file.type:'image/jpeg';
-    console.log('BarcodeDetector supported:', 'BarcodeDetector' in window);
-    // Try QR code detection first (browser native, fast, no AI needed)
-    if('BarcodeDetector' in window){
-      var bd=new BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13']});
-      createImageBitmap(file).then(function(bitmap){
-        return bd.detect(bitmap);
-      }).then(function(barcodes){
-        console.log('Barcodes found:', barcodes.length, barcodes.map(function(b){return b.rawValue;}));
-        if(barcodes.length>0){
-          hide(msgId);
-          var code=barcodes[0].rawValue.trim().toUpperCase();
-          onResult(deriveSpecs({found:true,model:code,confidence:'high'}));
-        } else {
-          // No barcode found - fall back to AI
-          aiScan(file,mediaType,msgTxtId,msgId,errTxtId,errId,onResult);
-        }
-      }).catch(function(){
+    // Try QR decode first using jsQR, then fall back to AI
+    tryQR(file, function(code){
+      if(code){
+        hide(msgId);
+        onResult(deriveSpecs({found:true,model:code.toUpperCase(),confidence:'high'}));
+      } else {
         aiScan(file,mediaType,msgTxtId,msgId,errTxtId,errId,onResult);
-      });
-    } else {
-      // BarcodeDetector not supported - go straight to AI
-      aiScan(file,mediaType,msgTxtId,msgId,errTxtId,errId,onResult);
-    }
+      }
+    });
   });
 }
 
