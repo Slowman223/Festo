@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Festo Cylinder Stock</title>
+<title>Parts Stock Tracker</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -144,8 +144,8 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     <input type="file" id="fileOut" accept="image/*" capture="environment">
     <div id="promptOut">
       <i class="ti ti-arrow-up" style="font-size:28px;color:var(--text3);display:block;margin-bottom:.5rem"></i>
-      <div style="font-size:15px;font-weight:500;margin-bottom:4px">Stock out — scan cylinder label</div>
-      <div style="font-size:13px;color:var(--text2)">Tap to take or upload a photo</div>
+      <div style="font-size:15px;font-weight:500;margin-bottom:4px">Stock out — scan label</div>
+      <div style="font-size:13px;color:var(--text2)">Festo, THK, Rexroth — tap to scan</div>
     </div>
     <div id="prevOutWrap" style="display:none">
       <img id="prevOut" class="preview-img" alt="Cylinder photo">
@@ -157,7 +157,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
   <div class="manual-box" id="manualOutBox">
     <div class="inner">
-      <input class="si-input" id="manualOutInput" placeholder="e.g. DSBC-40-300-PPVA-N3" style="text-transform:uppercase">
+      <input class="si-input" id="manualOutInput" placeholder="e.g. DSBC-40-300-PPVA-N3 or THK part no." style="text-transform:uppercase">
       <button class="abtn" id="manualOutApply">Apply</button>
     </div>
   </div>
@@ -200,8 +200,8 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     <input type="file" id="fileIn" accept="image/*" capture="environment">
     <div id="promptIn">
       <i class="ti ti-arrow-down" style="font-size:28px;color:var(--text3);display:block;margin-bottom:.5rem"></i>
-      <div style="font-size:15px;font-weight:500;margin-bottom:4px">Stock in — scan cylinder label</div>
-      <div style="font-size:13px;color:var(--text2)">Tap to take or upload a photo</div>
+      <div style="font-size:15px;font-weight:500;margin-bottom:4px">Stock in — scan label</div>
+      <div style="font-size:13px;color:var(--text2)">Festo, THK, Rexroth — tap to scan</div>
     </div>
     <div id="prevInWrap" style="display:none">
       <img id="prevIn" class="preview-img" alt="Cylinder photo">
@@ -213,7 +213,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
   <div class="manual-box" id="manualInBox">
     <div class="inner">
-      <input class="si-input" id="manualInInput" placeholder="e.g. ADN-25-150-A-P-A" style="text-transform:uppercase">
+      <input class="si-input" id="manualInInput" placeholder="e.g. ADN-25-150-A-P-A or THK part no." style="text-transform:uppercase">
       <button class="abtn" id="manualInApply">Apply</button>
     </div>
   </div>
@@ -333,7 +333,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.35 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.39 — 20 Jun 2026</div>
 </div>
 
 <script>
@@ -392,7 +392,7 @@ function callGroq(base64,mediaType,onSuccess,onError){
     if(modelList.indexOf(name)===-1&&/[A-Z]{2,}-\d+/.test(name)) modelList.push(name);
   });
 
-  var prompt='Look at the white Festo label in the image. Read the model number printed in bold. Reply with ONLY the model number, nothing else. Example: DSBC-40-300-PPVA-N3';
+  var prompt='Look at the product label in the image. Read the part number or model number printed on the label. This could be a Festo cylinder (e.g. DSBC-40-300-PPVA-N3), a THK bearing/rail, or a Rexroth part. Reply with ONLY the part number, nothing else.';
 
   fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',
@@ -414,8 +414,10 @@ function callGroq(base64,mediaType,onSuccess,onError){
     if(!r.ok){
       var errMsg=r.data&&r.data.error?r.data.error.message:'API error';
       if(r.data&&r.data.error&&(r.data.error.code==='rate_limit_exceeded'||errMsg.toLowerCase().indexOf('rate limit')!==-1)){
-        onError('Rate limit — auto-retrying in 5 seconds…');
-        setTimeout(function(){callGroq(base64,mediaType,onSuccess,onError);},5000);
+        if(callGroq._retrying){callGroq._retrying=false;onError('Rate limit — please wait 30 seconds before scanning again.');return;}
+        callGroq._retrying=true;
+        onError('Rate limit — auto-retrying in 15 seconds…');
+        setTimeout(function(){callGroq._retrying=false;callGroq(base64,mediaType,onSuccess,onError);},15000);
         return;
       }
       onError(errMsg); return;
