@@ -295,7 +295,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.31 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.32 — 19 Jun 2026</div>
 <div class="modal-overlay" id="logDeleteModal" style="display:none">
   <div class="modal">
     <h3>Delete log entry?</h3>
@@ -584,7 +584,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         if(!r.ok){showError(r.data&&r.data.error&&r.data.error.message?r.data.error.message:'API error');return;}
         var raw=(r.data.choices&&r.data.choices[0]&&r.data.choices[0].message&&r.data.choices[0].message.content)||'';
         var parsed;
-        try{parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());}
+        try{var clean=raw.replace(/<think>[\s\S]*?<\/think>/g,'').replace(/```json|```/g,'').trim();parsed=JSON.parse(clean);}
         catch(e){showError('Could not parse response — try a clearer photo.');return;}
         if(!parsed.found){showError(parsed.reason||'No Festo cylinder detected.');return;}
         currentResult=parsed;
@@ -955,7 +955,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         if(!r.ok){showErrorIn(r.data&&r.data.error&&r.data.error.message?r.data.error.message:'API error');return;}
         var raw=(r.data.choices&&r.data.choices[0]&&r.data.choices[0].message&&r.data.choices[0].message.content)||'';
         var parsed;
-        try{parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());}
+        try{var clean=raw.replace(/<think>[\s\S]*?<\/think>/g,'').replace(/```json|```/g,'').trim();parsed=JSON.parse(clean);}
         catch(e){showErrorIn('Could not parse response — try a clearer photo.');return;}
         if(!parsed.found){showErrorIn(parsed.reason||'No Festo cylinder detected.');return;}
         // check mapping
