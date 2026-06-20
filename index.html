@@ -333,7 +333,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.41 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.42 — 20 Jun 2026</div>
 </div>
 
 <script>
@@ -392,7 +392,7 @@ function callGroq(base64,mediaType,onSuccess,onError){
     if(modelList.indexOf(name)===-1&&/[A-Z]{2,}-\d+/.test(name)) modelList.push(name);
   });
 
-  var prompt='Look at the product label in the image. Read the part number or model number printed on the label. This could be a Festo cylinder (e.g. DSBC-40-300-PPVA-N3), a THK bearing/rail, or a Rexroth part. Reply with ONLY the part number, nothing else.';
+  var prompt='Look at this image. It may contain either a QR code or a product label. If there is a QR code, decode it and reply with the text it contains. If there is a product label, read the part number or model number printed on it. Reply with ONLY the part number or QR code text, nothing else.';
 
   fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',
