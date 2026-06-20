@@ -338,7 +338,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.11 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.12 — 20 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -431,6 +431,13 @@ function callGroq(base64, mediaType, onSuccess, onError){
   var key = localStorage.getItem('festo_api_key') || ($('apiKey').value || '').trim();
   if(!key){ onError('Enter your Groq API key in the Settings tab.'); return; }
 
+  // We ask for the model number only as plain text — simplest possible request.
+  // Qwen may still wrap it in thinking/JSON, so we handle all those cases in extraction.
+  var prompt = '/no_think Look at this image. Find the Festo product label (white sticker with FESTO logo). '
+    + 'Read the model number printed in bold on the label. '
+    + 'Reply with ONLY the model number. Nothing else. '
+    + 'Example: DSBC-40-300-PPVA-N3';
+
   fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -439,44 +446,75 @@ function callGroq(base64, mediaType, onSuccess, onError){
     },
     body: JSON.stringify({
       model: 'qwen/qwen3.6-27b',
-      max_tokens: 500,
-      temperature: 0.1,
-      messages: [
-        { role: 'user', content: [
+      max_tokens: 50,
+      temperature: 0,
+      messages: [{
+        role: 'user',
+        content: [
           { type: 'image_url', image_url: { url: 'data:' + mediaType + ';base64,' + base64 } },
-          { type: 'text', text: 'Read the Festo label and return JSON only.' }
-        ]}
-      ]
+          { type: 'text', text: prompt }
+        ]
+      }]
     })
   })
   .then(function(res){ return res.json().then(function(d){ return {ok:res.ok, data:d}; }); })
   .then(function(r){
     if(!r.ok){
-      onError(r.data && r.data.error ? r.data.error.message : 'API error');
+      onError(r.data && r.data.error ? r.data.error.message : 'API error ' + r.data.error.status);
       return;
     }
-    var raw = (r.data.choices && r.data.choices[0] && r.data.choices[0].message && r.data.choices[0].message.content) || '';
-    console.log('RAW:', raw);
-    // strip think tags and markdown
-    var cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json|```/gi,'').trim();
-    // try JSON parse to get model field
+
+    var raw = (r.data.choices && r.data.choices[0] && r.data.choices[0].message
+               && r.data.choices[0].message.content) || '';
+
+    // ── Extraction pipeline ──────────────────────────────────────────────────
+    // Step 1: strip Qwen <think> blocks
+    var text = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+    // Step 2: strip markdown code fences
+    text = text.replace(/```[a-z]*
+?/gi, '').replace(/```/g, '').trim();
+
+    // Step 3: if it looks like JSON, pull the "model" field
     var model = null;
-    var js = cleaned.indexOf('{'), je = cleaned.lastIndexOf('}');
-    if(js !== -1 && je !== -1){
+    if(text.indexOf('{') !== -1){
       try{
-        var p = JSON.parse(cleaned.slice(js, je+1));
-        model = p.model || p.Model || p.model_number || null;
+        var js = text.indexOf('{'), je = text.lastIndexOf('}');
+        var obj = JSON.parse(text.slice(js, je + 1));
+        model = obj.model || obj.Model || obj.model_number || obj.modelNumber
+              || obj['Model Number'] || obj.part_number || null;
       }catch(e){}
     }
-    // fallback: regex for Festo model pattern
+
+    // Step 4: regex — Festo model numbers follow pattern LETTERS-DIGITS-ALPHADASH
+    // Covers: DSBC-40-300-PPVA-N3, ADN-25-150-A-P-A, DFM-20-20-P-A-GF, etc.
     if(!model){
-      var m = cleaned.match(/([A-Z]{2,8}-\d{2,3}-[\w-]{3,})/i);
-      if(m) model = m[1];
+      var patterns = [
+        /([A-Z]{2,8}-\d{1,3}-\d{2,4}-[\w-]+)/i,   // 4-part: DSBC-40-300-PPVA-N3
+        /([A-Z]{2,8}-\d{1,3}-[\w-]{3,})/i,          // 3-part: ADN-25-150-A-P-A
+        /([A-Z]{2,8}-[\d]{2,3}-[\w-]+)/i             // general
+      ];
+      for(var pi = 0; pi < patterns.length; pi++){
+        var m = text.match(patterns[pi]);
+        if(m){ model = m[1]; break; }
+      }
     }
-    if(!model){ onError('No model number found. Response: ' + raw.slice(0,200)); return; }
-    model = model.toUpperCase().replace(/[.,;:!?\s]+$/,'');
-    console.log('MODEL:', model);
-    onSuccess(deriveSpecs({found:true, model:model, confidence:'high'}));
+
+    // Step 5: last resort — clean the whole response and see if it IS a model number
+    if(!model){
+      var candidate = text.replace(/[^A-Z0-9\-]/gi,'').toUpperCase();
+      if(candidate.length >= 8 && candidate.indexOf('-') !== -1) model = candidate;
+    }
+
+    if(!model){
+      onError('Could not find a model number. Is the label clearly visible? Response: ' + raw.slice(0,150));
+      return;
+    }
+
+    // Clean up — uppercase, trim trailing punctuation/spaces
+    model = model.toUpperCase().replace(/[\s.,;:!?'"]+$/,'');
+
+    onSuccess(deriveSpecs({found: true, model: model, confidence: 'high'}));
   })
   .catch(function(e){ onError('Network error: ' + e.message); });
 }
