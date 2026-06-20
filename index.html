@@ -338,7 +338,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.03 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.04 — 20 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -399,20 +399,39 @@ function nowStrings(){
   };
 }
 
+// ── Derive specs from model string ───────────────────────────────────────────
+function deriveSpecs(r){
+  var m = (r.model || '').toUpperCase();
+  // series = first segment
+  if(!r.series){ r.series = m.split('-')[0] || ''; }
+  // bore = first number segment
+  if(!r.bore_mm){
+    var parts = m.split('-');
+    for(var i=1;i<parts.length;i++){
+      var n = parseInt(parts[i]);
+      if(!isNaN(n) && n > 0){ r.bore_mm = n; break; }
+    }
+  }
+  // stroke = second number segment
+  if(!r.stroke_mm){
+    var parts2 = m.split('-');
+    var found = 0;
+    for(var j=1;j<parts2.length;j++){
+      var n2 = parseInt(parts2[j]);
+      if(!isNaN(n2) && n2 > 0){ found++; if(found===2){ r.stroke_mm = n2; break; } }
+    }
+  }
+  return r;
+}
+
 // ── API call ─────────────────────────────────────────────────────────────────
 var SYSTEM = [
-  'You are a barcode/label reader for Festo pneumatic cylinders.',
-  'Look at the photo and find the white product label on the cylinder.',
-  'The label shows the FESTO logo and a model number.',
-  'Read the model number EXACTLY as printed on the label.',
-  'Common examples: DSBC-40-300-PPVA-N3, ADN-25-150-A-P-A, DNC-40-200-PPV-A, DFM-20-20-P-A-GF',
-  '',
-  'Respond with ONLY valid JSON — no explanation, no markdown, no code fences:',
-  '',
-  'If label found: {"found":true,"model":"DSBC-40-300-PPVA-N3","series":"DSBC","bore_mm":40,"stroke_mm":300,"mount":"none","cushioning":"pneumatic","notes":"ISO 15552","confidence":"high"}',
-  'If not found: {"found":false,"reason":"No Festo label visible"}',
-  '',
-  'confidence must be one of: "high", "medium", "low"'
+  'You are a label reader for Festo pneumatic cylinders.',
+  'Find the white Festo label in the photo and read the model number printed on it.',
+  'Return ONLY this JSON:',
+  '{"found":true,"model":"DSBC-40-300-PPVA-N3","confidence":"high"}',
+  'Or if no label: {"found":false}',
+  'Use the exact model number from the label. confidence is high, medium, or low.'
 ].join('\n');
 
 function callGroq(base64, mediaType, onSuccess, onError){
@@ -505,6 +524,8 @@ setupScan('fileOut','promptOut','prevOutWrap','prevOut','msgOut','msgOutTxt','er
   outResult = r; outQty = 1; $('outQVal').textContent = '1';
   $('outTitle').textContent = r.model || 'Unknown';
   $('outSub').textContent = r.series ? 'Series ' + r.series : 'Festo cylinder';
+  // derive specs from model string if not provided
+  r = deriveSpecs(r);
   renderBadge($('outConf'), r.confidence);
   renderSpecs($('outSpecs'), r);
   renderMachinePicker(r.model, $('outMachBox'), $('outNoMatch'), $('outMachNo'), $('outLoc'));
@@ -576,6 +597,7 @@ setupScan('fileIn','promptIn','prevInWrap','prevIn','msgIn','msgInTxt','errIn','
   var key = (r.model||'').toLowerCase();
   var inMapping = mapping[key] || Object.keys(mapping).find(function(k){ return key.indexOf(k)!==-1 || k.indexOf(key)!==-1; });
   if(!inMapping){ $('errInTxt').textContent = '⚠ '+r.model+' is not in your mapping. Add it to the Mapping tab first.'; show('errIn'); return; }
+  r = deriveSpecs(r);
   inResult = r; inQty = 1; $('inQVal').textContent = '1';
   $('inTitle').textContent = r.model || 'Unknown';
   $('inSub').textContent = r.series ? 'Series ' + r.series : 'Festo cylinder';
