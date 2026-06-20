@@ -333,7 +333,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.30 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.33 — 20 Jun 2026</div>
 </div>
 
 <script>
@@ -392,18 +392,17 @@ function callGroq(base64,mediaType,onSuccess,onError){
     if(modelList.indexOf(name)===-1&&/[A-Z]{2,}-\d+/.test(name)) modelList.push(name);
   });
 
-  var prompt=modelList.length>0
-    ? 'These Festo cylinder models are used in our factory: '+modelList.join(', ')+'. Look at the Festo label in the image. Which model from this list exactly matches what is printed on the label? Reply with ONLY the model number.'
-    : 'Look at the white Festo label in the image. Read the model number printed in bold. Reply with ONLY the model number. Example: DSBC-40-300-PPVA-N3';
+  var prompt='Look at the white Festo label in the image. Read the model number printed in bold. Reply with ONLY the model number, nothing else. Example: DSBC-40-300-PPVA-N3';
 
   fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
     body:JSON.stringify({
       model:'qwen/qwen3.6-27b',
-      max_tokens:500,
+      max_tokens:50,
       temperature:0,
       reasoning_effort:'none',
+      reasoning_format:'hidden',
       messages:[{role:'user',content:[
         {type:'image_url',image_url:{url:'data:'+mediaType+';base64,'+base64}},
         {type:'text',text:prompt}
