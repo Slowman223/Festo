@@ -295,7 +295,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.34 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.35 — 19 Jun 2026</div>
 <div class="modal-overlay" id="logDeleteModal" style="display:none">
   <div class="modal">
     <h3>Delete log entry?</h3>
@@ -552,7 +552,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
   $('retryBtn').addEventListener('click',function(){if(currentFile)analyzeImage(currentFile);});
 
-  var SYSTEM='You are an expert Festo pneumatics engineer. The user sends a photo of a Festo air cylinder. Return ONLY a JSON object, no prose, no markdown fences.\n\nIf a Festo cylinder is visible:\n{"found":true,"model":"DNC-40-200-PPV-A","series":"DNC","bore_mm":40,"stroke_mm":200,"mount":"foot","cushioning":"pneumatic","notes":"ISO 15552 profile cylinder","confidence":"high"}\n\nIf not found:\n{"found":false,"reason":"No Festo cylinder visible"}\n\nconfidence: "high"|"medium"|"low"\nmount examples: foot, flange, trunnion, clevis, direct';
+  var SYSTEM='You are an expert Festo pneumatics engineer. The user sends a photo of a Festo air cylinder. Output ONLY raw JSON with no thinking, no explanation, no markdown.\n\nIf a Festo cylinder is visible:\n{"found":true,"model":"DNC-40-200-PPV-A","series":"DNC","bore_mm":40,"stroke_mm":200,"mount":"foot","cushioning":"pneumatic","notes":"ISO 15552 profile cylinder","confidence":"high"}\n\nIf not found:\n{"found":false,"reason":"No Festo cylinder visible"}\n\nconfidence: "high"|"medium"|"low"\nmount examples: foot, flange, trunnion, clevis, direct';
 
   function analyzeImage(file){
     var key=localStorage.getItem('festo_api_key')||$('apiKey').value.trim();
@@ -568,7 +568,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
         body:JSON.stringify({
           model:'qwen/qwen3.6-27b',
-          max_tokens:1000,
+          max_tokens:4000,
           messages:[
             {role:'system',content:SYSTEM},
             {role:'user',content:[
@@ -584,10 +584,8 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         if(!r.ok){showError(r.data&&r.data.error&&r.data.error.message?r.data.error.message:'API error');return;}
         var raw=(r.data.choices&&r.data.choices[0]&&r.data.choices[0].message&&r.data.choices[0].message.content)||'';
         var parsed;
-        console.log('RAW RESPONSE:',raw);
         try{
           var cleaned=raw.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json|```/g,'').trim();
-          console.log('CLEANED:',cleaned);
           // find first JSON object in response
           var start=cleaned.indexOf('{');
           var end=cleaned.lastIndexOf('}');
@@ -948,7 +946,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
         body:JSON.stringify({
           model:'qwen/qwen3.6-27b',
-          max_tokens:1000,
+          max_tokens:4000,
           messages:[
             {role:'system',content:SYSTEM},
             {role:'user',content:[
@@ -964,10 +962,8 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         if(!r.ok){showErrorIn(r.data&&r.data.error&&r.data.error.message?r.data.error.message:'API error');return;}
         var raw=(r.data.choices&&r.data.choices[0]&&r.data.choices[0].message&&r.data.choices[0].message.content)||'';
         var parsed;
-        console.log('RAW RESPONSE:',raw);
         try{
           var cleaned=raw.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json|```/g,'').trim();
-          console.log('CLEANED:',cleaned);
           // find first JSON object in response
           var start=cleaned.indexOf('{');
           var end=cleaned.lastIndexOf('}');
