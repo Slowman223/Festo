@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Festo cylinder stock tracker</title>
+<title>Festo Cylinder Stock</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -33,28 +33,33 @@
 }}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;padding:1rem}
 .app{max-width:580px;margin:0 auto}
-.api-bar{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:.875rem 1rem;margin-bottom:1.25rem;display:flex;gap:8px;align-items:center}
-.api-bar label{font-size:12px;color:var(--text2);white-space:nowrap}
-.api-bar input{flex:1;border:0.5px solid var(--border);border-radius:var(--r);padding:6px 10px;font-size:13px;background:var(--bg2);color:var(--text);font-family:monospace;min-width:0}
-.api-bar input:focus{outline:none;border-color:var(--border2)}
-.api-save{padding:6px 12px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;white-space:nowrap}
-.api-save:hover{background:var(--bg2)}
-.api-save.ok{background:var(--green-bg);color:var(--green-tx);border-color:var(--green-bd)}
+
+/* tabs */
 .tabs{display:flex;gap:2px;background:var(--bg2);border-radius:var(--rl);padding:3px;margin-bottom:1.25rem}
-.tab{flex:1;padding:7px 4px;border:none;border-radius:calc(var(--rl) - 2px);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:background .15s,color .15s}
+.tab{flex:1;padding:7px 4px;border:none;border-radius:calc(var(--rl) - 2px);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;transition:background .15s,color .15s}
 .tab.active{background:var(--bg);color:var(--text);font-weight:500}
 .tab:hover:not(.active){color:var(--text)}
 .panel{display:none}.panel.active{display:block}
-.scan-zone{border:0.5px dashed var(--border2);border-radius:var(--rl);padding:2rem 1rem;text-align:center;background:var(--bg2);margin-bottom:1.25rem;cursor:pointer;transition:background .15s;position:relative;overflow:hidden}
+
+/* cards */
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:1rem}
+.card h3{font-size:14px;font-weight:500;margin-bottom:.5rem}
+
+/* scan zone */
+.scan-zone{border:0.5px dashed var(--border2);border-radius:var(--rl);padding:2rem 1rem;text-align:center;background:var(--bg2);margin-bottom:1rem;cursor:pointer;position:relative;overflow:hidden;transition:background .15s}
 .scan-zone:hover{background:var(--bg3)}
 .scan-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .preview-img{max-height:180px;max-width:100%;border-radius:var(--r);margin:0 auto .75rem;border:0.5px solid var(--border);display:block}
+
+/* messages */
 .msg{display:flex;align-items:flex-start;gap:10px;padding:.75rem 1rem;border-radius:var(--r);font-size:14px;margin-bottom:1rem}
 .msg-blue{background:var(--blue-bg);color:var(--blue-tx)}
 .msg-red{background:var(--red-bg);color:var(--red-tx)}
-.spin{animation:spin 1s linear infinite;display:inline-block;flex-shrink:0;margin-top:1px}
+.spin{animation:spin 1s linear infinite;display:inline-block;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
-.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:1rem}
+
+/* result card */
+.result-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:1rem}
 .badge{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500;white-space:nowrap}
 .b-high{background:var(--green-bg);color:var(--green-tx)}
 .b-med{background:var(--amber-bg);color:var(--amber-tx)}
@@ -62,42 +67,54 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin-bottom:12px}
 .sl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
 .sv{font-size:13px;font-weight:500}
+
+/* machine picker */
 .mach-box{background:var(--pur-bg);border-radius:var(--r);padding:.75rem 1rem;margin-bottom:12px;display:flex;align-items:center;gap:10px}
 .mach-no{font-size:14px;font-weight:500;color:var(--pur-tx)}
 .mach-loc{font-size:12px;color:var(--pur-tx);opacity:.8;margin-top:2px}
-.mi{flex:1;border:0.5px solid var(--border);border-radius:var(--r);padding:6px 10px;font-size:13px;background:var(--bg);color:var(--text)}
-.mi:focus{outline:none;border-color:var(--border2)}
+.mach-pick-label{font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.mach-pick-list{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.mach-opt{display:flex;align-items:center;gap:10px;padding:.6rem .875rem;border:0.5px solid var(--border);border-radius:var(--r);cursor:pointer;background:var(--bg);transition:background .1s;width:100%;text-align:left}
+.mach-opt:hover{background:var(--bg2)}
+.mach-opt.selected{background:var(--pur-bg);border-color:var(--pur-tx)}
+.mach-opt-no{font-size:14px;font-weight:500;color:var(--pur-tx)}
+.mach-opt-loc{font-size:12px;color:var(--text2)}
+.no-match{background:var(--red-bg);border-radius:var(--r);padding:.65rem .875rem;margin-bottom:12px;font-size:13px;color:var(--red-tx)}
+
+/* action row */
 .arow{display:flex;align-items:center;gap:8px;border-top:0.5px solid var(--border);padding-top:12px}
 .qbtn{width:30px;height:30px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);font-size:16px}
 .qbtn:hover{background:var(--bg2)}
 .qnum{font-size:18px;font-weight:500;min-width:32px;text-align:center}
-.lbtn{margin-left:auto;padding:6px 14px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:13px;cursor:pointer;background:var(--bg);color:var(--text)}
-.lbtn:hover{background:var(--bg2)}
-.lbtn.ok{background:var(--green-bg);color:var(--green-tx);border-color:var(--green-bd)}
+.abtn{margin-left:auto;padding:6px 14px;border:0.5px solid var(--border2);border-radius:var(--r);font-size:13px;cursor:pointer;background:var(--bg);color:var(--text)}
+.abtn:hover{background:var(--bg2)}
+.abtn.ok{background:var(--green-bg);color:var(--green-tx);border-color:var(--green-bd)}
+
+/* stock list */
 .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
 .sec-hdr h2{font-size:16px;font-weight:500}
-.sec-meta{font-size:13px;color:var(--text2)}
 .empty{text-align:center;padding:2rem;color:var(--text2);font-size:14px;border:0.5px solid var(--border);border-radius:var(--rl)}
 .si{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:.75rem 1rem;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.si.low{background:var(--red-bg)}
 .si-info{flex:1;min-width:0}
 .si-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .si-sub{font-size:12px;color:var(--text2)}
-.sqty{background:var(--bg2);border-radius:var(--r);padding:4px 10px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px}
-.iq{width:22px;height:22px;border:0.5px solid var(--border2);border-radius:4px;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);font-size:13px}
-.iq:hover{background:var(--bg3)}
+.sqty{background:var(--bg2);border-radius:var(--r);padding:4px 12px;font-size:14px;font-weight:500}
+.warn-badge{font-size:11px;padding:2px 7px;border-radius:20px;background:var(--red-bg);color:var(--red-tx);font-weight:500;margin-left:4px;border:0.5px solid var(--red-bd)}
 .dbtn{width:28px;height:28px;border:none;background:transparent;cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center;border-radius:var(--r);font-size:15px;flex-shrink:0}
 .dbtn:hover{background:var(--red-bg);color:var(--red-tx)}
+
+/* log table */
+.expbtn{padding:6px 12px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px}
+.expbtn:hover{background:var(--bg2)}
 .log-wrap{overflow-x:auto;border:0.5px solid var(--border);border-radius:var(--rl);background:var(--bg)}
 table.lt{width:100%;border-collapse:collapse;font-size:13px}
 .lt th{text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);border-bottom:0.5px solid var(--border);white-space:nowrap}
 .lt td{padding:7px 10px;border-bottom:0.5px solid var(--border)}
 .lt tr:last-child td{border-bottom:none}
 .lt tr:hover td{background:var(--bg2)}
-.expbtn{padding:6px 12px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px}
-.expbtn:hover{background:var(--bg2)}
-.uc{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:1rem}
-.uc h3{font-size:14px;font-weight:500;margin-bottom:4px}
-.uc p{font-size:13px;color:var(--text2);margin-bottom:.75rem}
+
+/* mapping */
 .fbtn{padding:6px 12px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:13px;cursor:pointer;position:relative;overflow:hidden}
 .fbtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .fbtn:hover{background:var(--bg3)}
@@ -107,31 +124,27 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 .mt th{text-align:left;padding:4px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);border-bottom:0.5px solid var(--border)}
 .mt td{padding:5px 8px;border-bottom:0.5px solid var(--border)}
 .mt tr:last-child td{border-bottom:none}
-.dlt{font-size:12px;color:var(--blue-tx);cursor:pointer;background:none;border:none;padding:0;text-decoration:underline;margin-top:6px;display:inline-block}
-.dlt:hover{opacity:.75}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem}
-.modal{background:var(--bg);border-radius:var(--rl);padding:1.25rem;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.dlt{font-size:12px;color:var(--blue-tx);cursor:pointer;background:none;border:none;padding:0;text-decoration:underline}
+
+/* settings */
+.setting-row{display:flex;gap:8px;align-items:center;margin-bottom:.75rem}
+.setting-row label{font-size:13px;color:var(--text2);white-space:nowrap;min-width:80px}
+.setting-input{flex:1;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--bg2);color:var(--text);font-family:monospace}
+.setting-input:focus{outline:none;border-color:var(--border2)}
+.sbtn{padding:6px 14px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;white-space:nowrap}
+.sbtn:hover{background:var(--bg2)}
+.sbtn.ok{background:var(--green-bg);color:var(--green-tx);border-color:var(--green-bd)}
+
+/* modals */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:var(--bg);border-radius:var(--rl);padding:1.25rem;max-width:320px;width:100%}
 .modal h3{font-size:15px;font-weight:500;margin-bottom:8px}
 .modal p{font-size:13px;color:var(--text2);margin-bottom:1rem}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end}
 .modal-cancel{padding:6px 14px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:13px;cursor:pointer}
-.modal-cancel:hover{background:var(--bg2)}
 .modal-confirm{padding:6px 14px;border:0.5px solid var(--red-bd);border-radius:var(--r);background:var(--red-bg);color:var(--red-tx);font-size:13px;cursor:pointer;font-weight:500}
-.modal-confirm:hover{filter:brightness(.95)}
-.search-bar{display:flex;gap:8px;align-items:center;margin-bottom:.75rem}
-.search-input{flex:1;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--bg);color:var(--text)}
-.search-input:focus{outline:none;border-color:var(--border2)}
-.low-stock{background:var(--red-bg)!important}
-.low-stock .si-name{color:var(--red-tx)}
-.warn-badge{font-size:11px;padding:2px 7px;border-radius:20px;background:var(--red-bg);color:var(--red-tx);font-weight:500;white-space:nowrap;margin-left:4px}
-.mach-pick{margin-bottom:12px}
-.mach-pick-label{font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500}
-.mach-pick-list{display:flex;flex-direction:column;gap:4px}
-.mach-opt{display:flex;align-items:center;gap:10px;padding:.6rem .875rem;border:0.5px solid var(--border);border-radius:var(--r);cursor:pointer;background:var(--bg);transition:background .1s}
-.mach-opt:hover{background:var(--bg2);border-color:var(--border2)}
-.mach-opt.selected{background:var(--pur-bg);border-color:var(--pur-tx)}
-.mach-opt-no{font-size:14px;font-weight:500;color:var(--pur-tx)}
-.mach-opt-loc{font-size:12px;color:var(--text2)}
+.pw-input{width:100%;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--bg2);color:var(--text);margin-bottom:.75rem}
+.pw-input:focus{outline:none;border-color:var(--border2)}
 </style>
 </head>
 <body>
@@ -146,108 +159,91 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   <button class="tab" data-tab="settings"><i class="ti ti-settings"></i> Settings</button>
 </div>
 
-<!-- SCAN -->
+<!-- STOCK OUT -->
 <div class="panel active" id="panel-out">
-  <div class="scan-zone">
-    <input type="file" id="fileInput" accept="image/*" capture="environment">
-    <div id="scanPrompt">
-      <i class="ti ti-camera" style="font-size:32px;color:var(--text3);display:block;margin-bottom:.75rem"></i>
-      <div style="font-size:15px;font-weight:500;margin-bottom:4px">Take or upload a photo</div>
-      <div style="font-size:13px;color:var(--text2)">Point at the cylinder body or label</div>
+  <div class="scan-zone" id="szOut">
+    <input type="file" id="fileOut" accept="image/*" capture="environment">
+    <div id="promptOut">
+      <i class="ti ti-arrow-up" style="font-size:28px;color:var(--text3);display:block;margin-bottom:.5rem"></i>
+      <div style="font-size:15px;font-weight:500;margin-bottom:4px">Stock out — take or upload a photo</div>
+      <div style="font-size:13px;color:var(--text2)">Point at the cylinder label</div>
     </div>
-    <div id="previewWrap" style="display:none">
-      <img id="previewImg" class="preview-img" alt="Cylinder photo">
+    <div id="prevOutWrap" style="display:none">
+      <img id="prevOut" class="preview-img" alt="Cylinder photo">
       <div style="font-size:13px;color:var(--text2)">Tap to use a different photo</div>
     </div>
   </div>
-  <div id="analyzingMsg" class="msg msg-blue" style="display:none">
-    <i class="ti ti-loader spin"></i><span id="analyzingText">Identifying cylinder…</span>
+  <div id="msgOut" class="msg msg-blue" style="display:none">
+    <i class="ti ti-loader spin"></i><span id="msgOutTxt">Identifying…</span>
   </div>
-  <div id="errorBox" class="msg msg-red" style="display:none">
-    <i class="ti ti-alert-circle" style="flex-shrink:0;margin-top:1px"></i>
-    <div style="flex:1">
-      <div id="errorText"></div>
-      <button style="margin-top:6px;font-size:12px;padding:4px 10px;border:0.5px solid var(--red-bd);border-radius:var(--r);background:transparent;color:var(--red-tx);cursor:pointer" id="retryBtn">
-        <i class="ti ti-refresh" style="font-size:13px;vertical-align:-1px"></i> Retry
-      </button>
-    </div>
+  <div id="errOut" class="msg msg-red" style="display:none">
+    <i class="ti ti-alert-circle" style="flex-shrink:0"></i>
+    <div style="flex:1"><div id="errOutTxt"></div>
+    <button style="margin-top:6px;font-size:12px;padding:4px 10px;border:0.5px solid var(--red-bd);border-radius:var(--r);background:transparent;color:var(--red-tx);cursor:pointer" id="retryOut">
+      <i class="ti ti-refresh" style="font-size:12px;vertical-align:-1px"></i> Retry
+    </button></div>
   </div>
-  <div class="card" id="resultCard" style="display:none">
+  <div id="resultOut" class="result-card" style="display:none">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px">
       <div>
-        <div style="font-size:15px;font-weight:500" id="resTitle"></div>
-        <div style="font-size:12px;color:var(--text2);margin-top:2px" id="resSub"></div>
+        <div style="font-size:15px;font-weight:500" id="outTitle"></div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px" id="outSub"></div>
       </div>
-      <span class="badge" id="resConf"></span>
+      <span class="badge" id="outConf"></span>
     </div>
-    <div class="spec-grid" id="resSpecs"></div>
-    <div class="mach-box" id="machBox" style="display:none">
-      <i class="ti ti-settings-2" style="flex-shrink:0;color:var(--pur-tx)"></i>
-      <div>
-        <div class="mach-no" id="machNo"></div>
-        <div class="mach-loc" id="machLoc"></div>
-      </div>
+    <div class="spec-grid" id="outSpecs"></div>
+    <div id="outMachBox" style="display:none"></div>
+    <div id="outNoMatch" class="no-match" style="display:none">
+      No machine mapping found for this cylinder. Add it to the Mapping tab first.
     </div>
-    <div id="machNoMatch" style="display:none;margin-bottom:12px">
-      <div class="msg msg-red" style="margin-bottom:0">
-        <i class="ti ti-alert-circle" style="flex-shrink:0;margin-top:1px"></i>
-        <div>No machine mapping found for this cylinder.<br><span style="font-size:12px">Add it to your mapping spreadsheet in the Mapping tab.</span></div>
-      </div>
-    </div>
-    <input type="hidden" id="inMachNo">
-    <input type="hidden" id="inLoc">
+    <input type="hidden" id="outMachNo">
+    <input type="hidden" id="outLoc">
     <div class="arow">
       <span style="font-size:13px;color:var(--text2)">Qty</span>
-      <button class="qbtn" id="qMinus"><i class="ti ti-minus"></i></button>
-      <span class="qnum" id="qVal">1</span>
-      <button class="qbtn" id="qPlus"><i class="ti ti-plus"></i></button>
-      <button class="lbtn" id="logBtn">Log replacement</button>
+      <button class="qbtn" id="outQMinus"><i class="ti ti-minus"></i></button>
+      <span class="qnum" id="outQVal">1</span>
+      <button class="qbtn" id="outQPlus"><i class="ti ti-plus"></i></button>
+      <button class="abtn" id="outLogBtn">Log replacement</button>
     </div>
   </div>
 </div>
 
-
 <!-- STOCK IN -->
 <div class="panel" id="panel-in">
-  <div class="scan-zone">
-    <input type="file" id="fileInputIn" accept="image/*" capture="environment">
-    <div id="scanPromptIn">
-      <i class="ti ti-arrow-down" style="font-size:32px;color:var(--text3);display:block;margin-bottom:.75rem"></i>
-      <div style="font-size:15px;font-weight:500;margin-bottom:4px">Take or upload a photo</div>
-      <div style="font-size:13px;color:var(--text2)">Scan a cylinder to add it to stock</div>
+  <div class="scan-zone" id="szIn">
+    <input type="file" id="fileIn" accept="image/*" capture="environment">
+    <div id="promptIn">
+      <i class="ti ti-arrow-down" style="font-size:28px;color:var(--text3);display:block;margin-bottom:.5rem"></i>
+      <div style="font-size:15px;font-weight:500;margin-bottom:4px">Stock in — take or upload a photo</div>
+      <div style="font-size:13px;color:var(--text2)">Point at the cylinder label</div>
     </div>
-    <div id="previewWrapIn" style="display:none">
-      <img id="previewImgIn" class="preview-img" alt="Cylinder photo">
+    <div id="prevInWrap" style="display:none">
+      <img id="prevIn" class="preview-img" alt="Cylinder photo">
       <div style="font-size:13px;color:var(--text2)">Tap to use a different photo</div>
     </div>
   </div>
-  <div id="analyzingMsgIn" class="msg msg-blue" style="display:none">
-    <i class="ti ti-loader spin"></i><span id="analyzingTextIn">Identifying cylinder…</span>
+  <div id="msgIn" class="msg msg-blue" style="display:none">
+    <i class="ti ti-loader spin"></i><span id="msgInTxt">Identifying…</span>
   </div>
-  <div id="errorBoxIn" class="msg msg-red" style="display:none">
-    <i class="ti ti-alert-circle" style="flex-shrink:0;margin-top:1px"></i>
-    <div style="flex:1">
-      <div id="errorTextIn"></div>
-      <button style="margin-top:6px;font-size:12px;padding:4px 10px;border:0.5px solid var(--red-bd);border-radius:var(--r);background:transparent;color:var(--red-tx);cursor:pointer" id="retryBtnIn">
-        <i class="ti ti-refresh" style="font-size:13px;vertical-align:-1px"></i> Retry
-      </button>
-    </div>
+  <div id="errIn" class="msg msg-red" style="display:none">
+    <i class="ti ti-alert-circle" style="flex-shrink:0"></i>
+    <div id="errInTxt" style="flex:1"></div>
   </div>
-  <div class="card" id="resultCardIn" style="display:none">
+  <div id="resultIn" class="result-card" style="display:none">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px">
       <div>
-        <div style="font-size:15px;font-weight:500" id="resTitleIn"></div>
-        <div style="font-size:12px;color:var(--text2);margin-top:2px" id="resSubIn"></div>
+        <div style="font-size:15px;font-weight:500" id="inTitle"></div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px" id="inSub"></div>
       </div>
-      <span class="badge" id="resConfIn"></span>
+      <span class="badge" id="inConf"></span>
     </div>
-    <div class="spec-grid" id="resSpecsIn"></div>
+    <div class="spec-grid" id="inSpecs"></div>
     <div class="arow">
       <span style="font-size:13px;color:var(--text2)">Qty</span>
-      <button class="qbtn" id="qMinusIn"><i class="ti ti-minus"></i></button>
-      <span class="qnum" id="qValIn">1</span>
-      <button class="qbtn" id="qPlusIn"><i class="ti ti-plus"></i></button>
-      <button class="lbtn" id="addStockBtn">Add to stock</button>
+      <button class="qbtn" id="inQMinus"><i class="ti ti-minus"></i></button>
+      <span class="qnum" id="inQVal">1</span>
+      <button class="qbtn" id="inQPlus"><i class="ti ti-plus"></i></button>
+      <button class="abtn" id="inAddBtn">Add to stock</button>
     </div>
   </div>
 </div>
@@ -257,7 +253,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   <div class="sec-hdr">
     <h2>Stock on hand</h2>
     <div style="display:flex;align-items:center;gap:8px">
-      <span class="sec-meta" id="stockMeta">0 units</span>
+      <span style="font-size:13px;color:var(--text2)" id="stockMeta">0 units</span>
       <button class="expbtn" id="stockExpBtn"><i class="ti ti-file-spreadsheet"></i> Export</button>
     </div>
   </div>
@@ -268,22 +264,22 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 <div class="panel" id="panel-log">
   <div class="sec-hdr">
     <h2>Replacement log</h2>
-    <button class="expbtn" id="expBtn"><i class="ti ti-file-spreadsheet"></i> Export</button>
+    <button class="expbtn" id="logExpBtn"><i class="ti ti-file-spreadsheet"></i> Export</button>
   </div>
   <div id="logArea"></div>
 </div>
 
 <!-- MAPPING -->
 <div class="panel" id="panel-mapping">
-  <div class="uc">
+  <div class="card">
     <h3>Cylinder → machine mapping</h3>
-    <p>Upload an Excel file with five columns: <strong>Model</strong>, <strong>Machine No.</strong>, <strong>Location</strong>, <strong>Min Stock</strong>, <strong>Max Stock</strong>. Min stock triggers a warning; max stock is the reorder target.</p>
-    <div style="display:flex;gap:8px;align-items:center">
+    <p style="font-size:13px;color:var(--text2);margin-bottom:.75rem">Upload an Excel file with columns: <strong>Model</strong>, <strong>Machine No.</strong>, <strong>Location</strong>, <strong>Min Stock</strong>, <strong>Max Stock</strong></p>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
       <button class="fbtn"><input type="file" id="mappingFile" accept=".xlsx,.xls,.csv"><i class="ti ti-upload" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>Upload</button>
       <span class="fstat" id="mStat">No file loaded</span>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-      <button class="dlt" id="dlTpl"><i class="ti ti-download" style="font-size:12px;vertical-align:-1px"></i> Download blank template</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="dlt" id="dlTpl"><i class="ti ti-download" style="font-size:12px;vertical-align:-1px"></i> Download template</button>
       <button id="mSaveBtn" style="display:none;font-size:12px;padding:4px 10px;border:0.5px solid var(--green-bd);border-radius:var(--r);background:var(--green-bg);color:var(--green-tx);cursor:pointer"><i class="ti ti-cloud-upload" style="font-size:12px;vertical-align:-1px"></i> Save to Firebase</button>
     </div>
     <div id="mPreview" style="display:none;overflow-x:auto;margin-top:.75rem">
@@ -295,812 +291,581 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.38 — 19 Jun 2026</div>
-<div class="modal-overlay" id="logDeleteModal" style="display:none">
-  <div class="modal">
-    <h3>Delete log entry?</h3>
-    <p id="logDeleteMsg">Enter password to delete this entry.</p>
-    <input type="password" id="logDeletePw" placeholder="Password" style="width:100%;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--bg2);color:var(--text);margin-bottom:.75rem">
-    <div class="modal-btns">
-      <button class="modal-cancel" id="logDeleteCancelBtn">Cancel</button>
-      <button class="modal-confirm" id="logDeleteConfirmBtn">Delete</button>
-    </div>
-  </div>
-</div>
-<div class="modal-overlay" id="deleteModal" style="display:none">
-  <div class="modal">
-    <h3>Remove from stock?</h3>
-    <p id="deleteModalMsg"></p>
-    <div class="modal-btns">
-      <button class="modal-cancel" id="deleteCancelBtn">Cancel</button>
-      <button class="modal-confirm" id="deleteConfirmBtn">Delete</button>
-    </div>
-  </div>
-</div>
 <!-- SETTINGS -->
 <div class="panel" id="panel-settings">
-  <div class="card" style="margin-bottom:1rem">
-    <div style="font-size:14px;font-weight:500;margin-bottom:.75rem"><i class="ti ti-brand-groq" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>Groq API key</div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:.5rem">Required for photo scanning. Get a free key at console.groq.com</div>
-    <div style="display:flex;gap:8px">
-      <input type="password" id="apiKey" placeholder="gsk_..." autocomplete="off" style="flex:1;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--bg2);color:var(--text);font-family:monospace">
-      <button class="api-save" id="apiSave">Save</button>
+  <div class="card">
+    <h3><i class="ti ti-brand-groq" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>Groq API key</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Required for photo scanning. Free at console.groq.com</p>
+    <div class="setting-row">
+      <input type="password" class="setting-input" id="apiKey" placeholder="gsk_..." autocomplete="off">
+      <button class="sbtn" id="apiSave">Save</button>
     </div>
   </div>
-  <div class="card" style="margin-bottom:1rem">
-    <div style="font-size:14px;font-weight:500;margin-bottom:4px"><i class="ti ti-brand-firebase" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>Firebase</div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+  <div class="card">
+    <h3><i class="ti ti-cloud" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>Firebase</h3>
+    <div style="display:flex;justify-content:space-between;margin-bottom:.75rem">
       <span style="font-size:13px;color:var(--text2)">Status</span>
       <span style="font-size:13px" id="fbStatus">○ Not connected</span>
     </div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:.5rem">Paste your firebaseConfig to sync data across all tablets.</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:.5rem">Paste your firebaseConfig to sync across all tablets.</p>
     <textarea id="fbConfigInput" style="width:100%;height:90px;border:0.5px solid var(--border);border-radius:var(--r);padding:8px;font-size:12px;font-family:monospace;background:var(--bg2);color:var(--text);resize:vertical;margin-bottom:8px" placeholder="const firebaseConfig = { apiKey: ..., projectId: ..., ... }"></textarea>
-    <button class="api-save" id="fbSave">Connect</button>
+    <button class="sbtn" id="fbSave">Connect</button>
   </div>
-  <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:.5rem">Keys are saved in this browser only — not shared or uploaded anywhere.</div>
+  <div style="font-size:11px;color:var(--text3);text-align:center;padding:.5rem">Keys are saved in this browser only.</div>
 </div>
 
+<!-- MODALS -->
+<div class="overlay" id="deleteStockModal" style="display:none">
+  <div class="modal">
+    <h3>Remove from stock?</h3>
+    <p id="deleteStockMsg"></p>
+    <div class="modal-btns">
+      <button class="modal-cancel" id="deleteStockCancel">Cancel</button>
+      <button class="modal-confirm" id="deleteStockConfirm">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="deleteLogModal" style="display:none">
+  <div class="modal">
+    <h3>Delete log entry?</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:.75rem">Enter password to delete.</p>
+    <input type="password" class="pw-input" id="logPw" placeholder="Password">
+    <div class="modal-btns">
+      <button class="modal-cancel" id="deleteLogCancel">Cancel</button>
+      <button class="modal-confirm" id="deleteLogConfirm">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.00 — 20 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
-
 (function(){
-  var mapping={};
-  var stock=[];
-  var replacements=[];
-  var currentResult=null;
-  var currentFile=null;
-  var qty=1;
-  var db=null;
+'use strict';
 
-  function $(id){return document.getElementById(id);}
+// ── State ────────────────────────────────────────────────────────────────────
+var db = null;
+var mapping = {};        // key -> {displayName, machines, minStock, maxStock}
+var mappingRows = [];    // ordered flat rows from spreadsheet
+var stock = [];          // [{id, model, series, bore, stroke, qty}]
+var replacements = [];   // [{id, date, time, ts, model, machine, location, qty, type}]
 
-  // ── Firebase config ──────────────────────────────────────────────────────
-  var fbConfig=null;
-  try{var fc=localStorage.getItem('festo_fb_config');if(fc)fbConfig=JSON.parse(fc);}catch(e){}
+var outResult = null, outQty = 1;
+var inResult = null, inQty = 1;
+var pendingStockDelete = null;
+var pendingLogDelete = null;
 
-  function initFirebase(cfg){
-    try{
-      var app=firebase.initializeApp(cfg);
-      db=firebase.firestore();
-      setStatus('connected');
-      startListeners();
-      // load mapping from Firestore
-      loadMappingFromFirestore();
-      return true;
-    }catch(e){
-      setStatus('error','Firebase error: '+e.message);
-      return false;
-    }
-  }
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function $(id){ return document.getElementById(id); }
 
-  function setStatus(state,msg){
-    var el=$('fbStatus');
-    if(state==='connected'){
-      el.textContent='● Syncing';
-      el.style.color='var(--green-tx)';
-    }else if(state==='connecting'){
-      el.textContent='○ Connecting…';
-      el.style.color='var(--amber-tx)';
-    }else if(state==='error'){
-      el.textContent='✕ '+(msg||'Not connected');
-      el.style.color='var(--red-tx)';
-    }else{
-      el.textContent='○ Not connected — enter Firebase config';
-      el.style.color='var(--text2)';
-    }
-  }
+function show(id){ $(id).style.display = 'block'; }
+function hide(id){ $(id).style.display = 'none'; }
+function flex(id){ $(id).style.display = 'flex'; }
 
-  if(fbConfig){setStatus('connecting');initFirebase(fbConfig);}
-  else{setStatus('none');}
+function renderBadge(el, confidence){
+  var labels = {high:'High confidence', medium:'Medium confidence', low:'Low confidence'};
+  var cls = {high:'badge b-high', medium:'badge b-med', low:'badge b-low'};
+  el.textContent = labels[confidence] || confidence;
+  el.className = cls[confidence] || 'badge';
+}
 
-  // ── API key ──────────────────────────────────────────────────────────────
-  var storedKey=localStorage.getItem('festo_api_key');
-  if(storedKey){$('apiKey').value=storedKey;$('apiSave').textContent='Saved ✓';$('apiSave').className='api-save ok';}
-  $('apiSave').addEventListener('click',function(){
-    var k=$('apiKey').value.trim();if(!k)return;
-    localStorage.setItem('festo_api_key',k);
-    $('apiSave').textContent='Saved ✓';$('apiSave').className='api-save ok';
-  });
+function renderSpecs(el, r){
+  var rows = [
+    ['Bore', r.bore_mm ? r.bore_mm + ' mm' : '—'],
+    ['Stroke', r.stroke_mm ? r.stroke_mm + ' mm' : '—'],
+    ['Mount', r.mount || '—'],
+    ['Cushioning', r.cushioning || '—']
+  ];
+  if(r.notes) rows.push(['Notes', r.notes]);
+  el.innerHTML = rows.map(function(s){
+    return '<div><div class="sl">'+s[0]+'</div><div class="sv">'+s[1]+'</div></div>';
+  }).join('');
+}
 
-  // ── Firebase config save ─────────────────────────────────────────────────
-  $('fbSave').addEventListener('click',function(){
-    var raw=$('fbConfigInput').value.trim();
-    if(!raw){alert('Paste your Firebase config first.');return;}
-    // accept either the full initializeApp({...}) snippet or just the object
-    var match=raw.match(/\{[\s\S]*\}/);
-    if(!match){alert('Could not find a JSON object in the pasted config. Copy the firebaseConfig object including the { }.');return;}
-    try{
-      // replace JS keys (no quotes) with quoted keys for JSON.parse
-      var jsonStr=match[0].replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)(\s*:)/g,'$1"$2"$3');
-      var cfg=JSON.parse(jsonStr);
-      localStorage.setItem('festo_fb_config',JSON.stringify(cfg));
-      fbConfig=cfg;
-      setStatus('connecting');
-      if(initFirebase(cfg)){
-        $('fbSave').textContent='Connected ✓';
-        $('fbSave').className='api-save ok';
-        $('fbSetupCard').style.display='none';
-      }
-    }catch(e){alert('Could not parse config: '+e.message);}
-  });
+function toBase64(file, cb){
+  var r = new FileReader();
+  r.onload = function(){ cb(null, r.result.split(',')[1]); };
+  r.onerror = function(){ cb(new Error('Read failed')); };
+  r.readAsDataURL(file);
+}
 
+function nowStrings(){
+  var n = new Date();
+  return {
+    date: n.toLocaleDateString('en-AU'),
+    time: n.toLocaleTimeString('en-AU', {hour:'2-digit', minute:'2-digit'})
+  };
+}
 
-  // ── Firestore listeners ───────────────────────────────────────────────────
-  function startListeners(){
-    // Stock — one doc per model
-    db.collection('stock').onSnapshot(function(snap){
-      stock=[];
-      snap.forEach(function(d){stock.push(Object.assign({id:d.id},d.data()));});
-      renderStock();
-    });
-    // Replacements — ordered by timestamp desc
-    db.collection('replacements').orderBy('ts','desc').onSnapshot(function(snap){
-      replacements=[];
-      snap.forEach(function(d){replacements.push(Object.assign({id:d.id},d.data()));});
-      renderLog();
-    });
-  }
+// ── API call ─────────────────────────────────────────────────────────────────
+var SYSTEM = [
+  'You are a barcode/label reader for Festo pneumatic cylinders.',
+  'Look at the photo and find the white product label on the cylinder.',
+  'The label shows the FESTO logo and a model number.',
+  'Read the model number EXACTLY as printed on the label.',
+  'Common examples: DSBC-40-300-PPVA-N3, ADN-25-150-A-P-A, DNC-40-200-PPV-A, DFM-20-20-P-A-GF',
+  '',
+  'Respond with ONLY valid JSON — no explanation, no markdown, no code fences:',
+  '',
+  'If label found: {"found":true,"model":"DSBC-40-300-PPVA-N3","series":"DSBC","bore_mm":40,"stroke_mm":300,"mount":"none","cushioning":"pneumatic","notes":"ISO 15552","confidence":"high"}',
+  'If not found: {"found":false,"reason":"No Festo label visible"}',
+  '',
+  'confidence must be one of: "high", "medium", "low"'
+].join('\n');
 
-  // ── Mapping: stored in Firestore as a single doc ─────────────────────────
-  function loadMappingFromFirestore(){
-    db.collection('config').doc('mapping').onSnapshot(function(d){
-      if(d.exists){
-        try{
-          var data=d.data();
-          var rows=null;
-          // new format: rows field (flat ordered array)
-          if(data.rows){
-            rows=JSON.parse(data.rows);
-          }
-          // old format: json field (keyed object) 
-          else if(data.json){
-            var old=JSON.parse(data.json);
-            rows=[];
-            Object.keys(old).forEach(function(k){
-              var v=old[k];
-              var machines=v.machines||(Array.isArray(v)?v:[v]);
-              machines.forEach(function(m){
-                rows.push({key:k,displayName:v.displayName||k,machine:m.machine||m,location:m.location||'',minStock:v.minStock||0});
-              });
-            });
-          }
-          if(!rows||!rows.length){console.warn('No mapping rows found');return;}
-          // rebuild lookup mapping from rows
-          mapping={};
-          rows.forEach(function(row){
-            if(!mapping[row.key]){mapping[row.key]={displayName:row.displayName||row.key,machines:[],minStock:row.minStock||0,maxStock:row.maxStock||0};}
-            else{
-              if(row.minStock>0&&mapping[row.key].minStock===0)mapping[row.key].minStock=row.minStock;
-              if(row.maxStock>0&&mapping[row.key].maxStock===0)mapping[row.key].maxStock=row.maxStock;
-            }
-            mapping[row.key].machines.push({machine:row.machine,location:row.location});
-          });
-          window._mappingRows=rows;
-          renderMappingPreview();
-        }catch(e){console.error('Mapping parse error:',e);}
-      }
-    });
-  }
+function callGroq(base64, mediaType, onSuccess, onError){
+  var key = localStorage.getItem('festo_api_key') || ($('apiKey').value || '').trim();
+  if(!key){ onError('Enter your Groq API key in the Settings tab.'); return; }
 
-  function saveMappingToFirestore(){
-    if(!db){alert('Connect Firebase first.');return;}
-    // always use the original upload row order stored in window._mappingRows
-    var rows=(window._mappingRows||[]).map(function(r){
-      return {key:r.key,displayName:r.displayName,machine:r.machine,location:r.location,minStock:r.minStock||0,maxStock:r.maxStock||0};
-    });
-    if(!rows.length){alert('No mapping loaded. Please upload your spreadsheet first.');return;}
-    db.collection('config').doc('mapping').set({rows:JSON.stringify(rows)}).then(function(){
-      $('mStat').textContent=rows.length+' rows saved & synced';
-      $('mStat').className='fstat ok';
-    }).catch(function(e){alert('Save failed: '+e.message);});
-  }
-
-  function saveMappingRowsToFirestore(rows){
-    if(!db)return;
-    db.collection('config').doc('mapping').set({rows:JSON.stringify(rows)}).then(function(){
-      $('mStat').textContent=rows.length+' rows saved & synced';
-      $('mStat').className='fstat ok';
-    }).catch(function(e){alert('Save failed: '+e.message);});
-  }
-
-  function renderMappingPreview(){
-    var body=$('mBody');body.innerHTML='';
-    var count=0;
-    // always render from _mappingRows for correct order
-    (window._mappingRows||[]).forEach(function(row){
-      var minStock=row.minStock||0;
-      var tr=document.createElement('tr');
-      tr.innerHTML='<td>'+(row.displayName||row.key)+'</td><td>'+row.machine+'</td><td>'+(row.location||'—')+'</td><td>'+(minStock||'—')+'</td><td>'+((row.maxStock)||'—')+'</td>';
-      body.appendChild(tr);count++;
-    });
-    $('mPreview').style.display=count?'block':'none';
-    var total=count;
-    $('mStat').textContent=total+' mappings loaded';
-    $('mStat').className=total?'fstat ok':'fstat';
-  }
-
-  // ── Tabs ─────────────────────────────────────────────────────────────────
-  document.querySelectorAll('.tab').forEach(function(t){
-    t.addEventListener('click',function(){
-      document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
-      document.querySelectorAll('.panel').forEach(function(x){x.classList.remove('active');});
-      t.classList.add('active');
-      $('panel-'+t.dataset.tab).classList.add('active');
-      if(t.dataset.tab==='stock')renderStock();
-      if(t.dataset.tab==='log')renderLog();
-    });
-  });
-
-  // ── Stock out ─────────────────────────────────────────────────────────────
-  $('fileInput').addEventListener('change',function(e){
-    var file=e.target.files[0];if(!file)return;
-    currentFile=file;
-    $('previewImg').src=URL.createObjectURL(file);
-    $('scanPrompt').style.display='none';
-    $('previewWrap').style.display='block';
-    $('resultCard').style.display='none';
-    $('errorBox').style.display='none';
-    $('logBtn').className='lbtn';$('logBtn').textContent='Log replacement';
-    qty=1;$('qVal').textContent='1';
-    $('machBox').style.display='none';
-    $('machNoMatch').style.display='none';
-    $('inMachNo').value='';$('inLoc').value='';
-    var op=$('machPicker');if(op)op.parentNode.removeChild(op);
-    analyzeImage(file);
-  });
-
-  $('retryBtn').addEventListener('click',function(){if(currentFile)analyzeImage(currentFile);});
-
-  var SYSTEM='You are a label reader for Festo pneumatic cylinders. Look at the photo and read the white product label on the cylinder. The label always shows the FESTO logo and a model number like DSBC-40-300-PPVA-N3 or ADN-25-150-A-P-A or DNC-40-200-PPV-A.\n\nRead the model number exactly as printed on the label. Then return ONLY this JSON, nothing else:\n\nIf label is readable:\n{"found":true,"model":"DSBC-40-300-PPVA-N3","series":"DSBC","bore_mm":40,"stroke_mm":300,"mount":"none","cushioning":"pneumatic","notes":"ISO 15552","confidence":"high"}\n\nIf no Festo label visible:\n{"found":false,"reason":"No Festo label found"}\n\nReturn ONLY the JSON object. No explanation, no markdown, no extra text.';
-
-  function analyzeImage(file){
-    var key=localStorage.getItem('festo_api_key')||$('apiKey').value.trim();
-    if(!key){showError('Enter your Groq API key at the top first.');return;}
-    if(!db){showError('Connect Firebase first (Settings tab).');return;}
-    $('analyzingMsg').style.display='flex';$('analyzingText').textContent='Reading image…';
-    $('errorBox').style.display='none';$('resultCard').style.display='none';
-    toBase64(file,function(b64){
-      $('analyzingText').textContent='Identifying cylinder…';
-      var mediaType=file.type&&file.type.startsWith('image/')?file.type:'image/jpeg';
-      fetch('https://api.groq.com/openai/v1/chat/completions',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-        body:JSON.stringify({
-          model:'meta-llama/llama-4-scout-17b-16e-instruct',
-          max_tokens:1000,
-          messages:[
-            {role:'system',content:SYSTEM},
-            {role:'user',content:[
-              {type:'image_url',image_url:{url:'data:'+mediaType+';base64,'+b64}},
-              {type:'text',text:'Identify this Festo cylinder.'}
-            ]}
-          ]
-        })
-      })
-      .then(function(res){return res.json().then(function(d){return{ok:res.ok,data:d};});})
-      .then(function(r){
-        $('analyzingMsg').style.display='none';
-        if(!r.ok){showError(r.data&&r.data.error&&r.data.error.message?r.data.error.message:'API error');return;}
-        var raw=(r.data.choices&&r.data.choices[0]&&r.data.choices[0].message&&r.data.choices[0].message.content)||'';
-        var parsed;
-        console.log('RAW:',raw);
-        try{
-          var cleaned=raw.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json|```/g,'').trim();
-          console.log('CLEANED:',cleaned);
-          console.log('JSON start:',cleaned.indexOf('{'),'end:',cleaned.lastIndexOf('}'));
-          // find first JSON object in response
-          var start=cleaned.indexOf('{');
-          var end=cleaned.lastIndexOf('}');
-          if(start!==-1&&end!==-1){cleaned=cleaned.slice(start,end+1);}
-          parsed=JSON.parse(cleaned);
-        }
-        catch(e){showError('Could not parse response — try a clearer photo.');return;}
-        if(!parsed.found){showError(parsed.reason||'No Festo cylinder detected.');return;}
-        currentResult=parsed;
-        renderResult(parsed);
-        suggestMachine(parsed.model||'');
-      })
-      .catch(function(){
-        $('analyzingMsg').style.display='none';
-        showError('Network error — check your connection.');
-      });
-    },function(){
-      $('analyzingMsg').style.display='none';
-      showError('Could not read the image file.');
-    });
-  }
-
-  function suggestMachine(model){
-    var key=model.toLowerCase();
-    var entry=mapping[key];
-    if(!entry){
-      Object.keys(mapping).forEach(function(k){
-        if(!entry&&(key.indexOf(k)!==-1||k.indexOf(key)!==-1))entry=mapping[k];
-      });
-    }
-    var matches=entry?entry.machines:null;
-    $('machBox').style.display='none';
-    $('machNoMatch').style.display='none';
-    var old=$('machPicker');if(old)old.parentNode.removeChild(old);
-
-    if(matches&&matches.length===1){
-      $('machNo').textContent=matches[0].machine||'';
-      $('machLoc').textContent=matches[0].location||'';
-      $('machBox').style.display='flex';
-      $('inMachNo').value=matches[0].machine||'';
-      $('inLoc').value=matches[0].location||'';
-    }else if(matches&&matches.length>1){
-      var picker=document.createElement('div');
-      picker.id='machPicker';picker.className='mach-pick';
-      picker.innerHTML='<div class="mach-pick-label"><i class="ti ti-settings-2" style="font-size:13px;vertical-align:-1px;margin-right:4px"></i>Select the machine this cylinder is from</div><div class="mach-pick-list" id="machPickList"></div>';
-      $('resultCard').insertBefore(picker,$('resultCard').querySelector('.arow'));
-      matches.forEach(function(m){
-        var opt=document.createElement('button');
-        opt.className='mach-opt';
-        opt.innerHTML='<i class="ti ti-settings-2" style="color:var(--pur-tx);font-size:16px;flex-shrink:0"></i><div><div class="mach-opt-no">'+m.machine+'</div><div class="mach-opt-loc">'+(m.location||'')+'</div></div>';
-        opt.addEventListener('click',function(){
-          $('machPickList').querySelectorAll('.mach-opt').forEach(function(o){o.classList.remove('selected');});
-          opt.classList.add('selected');
-          $('inMachNo').value=m.machine||'';
-          $('inLoc').value=m.location||'';
-        });
-        $('machPickList').appendChild(opt);
-      });
-      $('inMachNo').value='';$('inLoc').value='';
-    }else{
-      $('machNoMatch').style.display='block';
-      $('inMachNo').value='';$('inLoc').value='';
-    }
-  }
-
-  function renderResult(r){
-    $('resTitle').textContent=r.model||'Unknown model';
-    $('resSub').textContent=r.series?'Series '+r.series:'Festo cylinder';
-    var c=$('resConf');
-    c.textContent={high:'High confidence',medium:'Medium confidence',low:'Low confidence'}[r.confidence]||r.confidence;
-    c.className='badge '+({high:'b-high',medium:'b-med',low:'b-low'}[r.confidence]||'');
-    $('resSpecs').innerHTML=[
-      ['Bore',r.bore_mm?r.bore_mm+' mm':'—'],
-      ['Stroke',r.stroke_mm?r.stroke_mm+' mm':'—'],
-      ['Mount',r.mount||'—'],
-      ['Cushioning',r.cushioning||'—']
-    ].concat(r.notes?[['Notes',r.notes]]:[]).map(function(s){
-      return '<div><div class="sl">'+s[0]+'</div><div class="sv">'+s[1]+'</div></div>';
-    }).join('');
-    $('resultCard').style.display='block';
-  }
-
-  $('qMinus').addEventListener('click',function(){if(qty>1){qty--;$('qVal').textContent=qty;}});
-  $('qPlus').addEventListener('click',function(){qty++;$('qVal').textContent=qty;});
-
-  $('logBtn').addEventListener('click',function(){
-    if(!currentResult)return;
-    var machine=$('inMachNo').value.trim()||$('machNo').textContent||'';
-    var location=$('inLoc').value.trim()||$('machLoc').textContent||'';
-    if(!machine){alert('Please select a machine before logging.');return;}
-    if(!db){alert('Connect Firebase first.');return;}
-    var now=new Date();
-    // deduct from stock in Firestore
-    var modelKey=currentResult.model;
-    var ex=stock.filter(function(s){return s.model===modelKey;})[0];
-    var newQty=ex?Math.max(0,ex.qty-qty):0;
-    db.collection('stock').doc(modelKey.replace(/[^a-zA-Z0-9-_]/g,'_')).set({
-      model:modelKey,series:currentResult.series||'',
-      bore:currentResult.bore_mm||'',stroke:currentResult.stroke_mm||'',qty:newQty
-    });
-    // add replacement log
-    db.collection('replacements').add({
-      date:now.toLocaleDateString('en-AU'),
-      time:now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}),
-      ts:firebase.firestore.FieldValue.serverTimestamp(),
-      model:modelKey,series:currentResult.series||'',
-      bore:currentResult.bore_mm||'',stroke:currentResult.stroke_mm||'',
-      machine:machine,location:location,qty:qty,type:'out'
-    });
-    $('logBtn').textContent='Logged ✓';$('logBtn').className='lbtn ok';
-  });
-
-  // ── Stock tab ────────────────────────────────────────────────────────────
-  function renderSettings(){
-    var storedKey=localStorage.getItem('festo_api_key')||'';
-    if(storedKey){$('apiKey').value=storedKey;$('apiSave').textContent='Saved ✓';$('apiSave').className='api-save ok';}
-    var fc=localStorage.getItem('festo_fb_config');
-    if(fc){$('fbConfigInput').value=fc;}
-  }
-
-  function renderStock(){
-    var units=stock.reduce(function(a,s){return a+s.qty;},0);
-    $('stockMeta').textContent=units+' unit'+(units!==1?'s':'')+' · '+stock.length+' model'+(stock.length!==1?'s':'');
-    filterStock();
-  }
-
-  window.filterStock=function(){
-    var filtered=stock.slice();
-    if(!filtered.length){
-      $('stockList').innerHTML='<div class="empty"><i class="ti ti-box-off" style="font-size:24px;display:block;margin-bottom:8px"></i>No cylinders in stock yet</div>';
+  fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + key
+    },
+    body: JSON.stringify({
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      max_tokens: 500,
+      temperature: 0.1,
+      messages: [
+        { role: 'system', content: SYSTEM },
+        { role: 'user', content: [
+          { type: 'image_url', image_url: { url: 'data:' + mediaType + ';base64,' + base64 } },
+          { type: 'text', text: 'Read the Festo label and return JSON only.' }
+        ]}
+      ]
+    })
+  })
+  .then(function(res){ return res.json().then(function(d){ return {ok:res.ok, data:d}; }); })
+  .then(function(r){
+    if(!r.ok){
+      onError(r.data && r.data.error ? r.data.error.message : 'API error');
       return;
     }
-    $('stockList').innerHTML=filtered.map(function(s,i){
-      var sub=[s.bore?s.bore+'mm bore':'',s.stroke?s.stroke+'mm stroke':'',s.series].filter(Boolean).join(' · ');
-      var mk=s.model.toLowerCase();
-      var minStock=(mapping[mk]&&mapping[mk].minStock)||0;
-      var isLow=minStock>0&&s.qty<minStock;
-      var realIdx=stock.indexOf(s);
-      return '<div class="si'+(isLow?' low-stock':'')+'">'
-        +'<i class="ti ti-cylinder" style="font-size:20px;color:'+(isLow?'var(--red-tx)':'var(--text2)')+';flex-shrink:0"></i>'
-        +'<div class="si-info"><div class="si-name">'+s.model+(isLow?'<span class="warn-badge">Low stock</span>':'')+'</div><div class="si-sub">'+sub+'</div></div>'
-        +'<div class="sqty"><span>'+s.qty+'</span></div>'
-        +'<button class="dbtn" data-id="'+(s.id||'')+'" data-model="'+s.model+'" title="Remove"><i class="ti ti-trash"></i></button>'
-        +'</div>';
-    }).join('');
-    $('stockList').querySelectorAll('[data-a]').forEach(function(b){
-      b.addEventListener('click',function(){
-        var i=+b.dataset.i;
-        var s=stock[i];if(!s||!db)return;
-        var nq=b.dataset.a==='inc'?s.qty+1:Math.max(0,s.qty-1);
-        db.collection('stock').doc(b.dataset.id).set(Object.assign({},s,{qty:nq,id:undefined}));
+    var raw = (r.data.choices && r.data.choices[0] && r.data.choices[0].message && r.data.choices[0].message.content) || '';
+    // Extract JSON — find first { to last }
+    var start = raw.indexOf('{');
+    var end = raw.lastIndexOf('}');
+    if(start === -1 || end === -1){ onError('No JSON in response. Raw: ' + raw.slice(0,200)); return; }
+    var jsonStr = raw.slice(start, end + 1);
+    var parsed;
+    try{ parsed = JSON.parse(jsonStr); }
+    catch(e){ onError('Parse error: ' + e.message + '. JSON: ' + jsonStr.slice(0,200)); return; }
+    onSuccess(parsed);
+  })
+  .catch(function(e){ onError('Network error: ' + e.message); });
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(x){ x.classList.remove('active'); });
+    t.classList.add('active');
+    $('panel-' + t.dataset.tab).classList.add('active');
+    if(t.dataset.tab === 'stock') renderStock();
+    if(t.dataset.tab === 'log') renderLog();
+    if(t.dataset.tab === 'settings') renderSettings();
+    if(t.dataset.tab === 'mapping') renderMappingPreview();
+  });
+});
+
+// ── Scan helper ───────────────────────────────────────────────────────────────
+function setupScan(fileId, promptId, prevWrapId, prevImgId, msgId, msgTxtId, errId, errTxtId, resultId, onResult){
+  $(fileId).addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    $(prevImgId).src = URL.createObjectURL(file);
+    hide(promptId); show(prevWrapId);
+    hide(errId); hide(resultId);
+    $(msgTxtId).textContent = 'Reading label…';
+    flex(msgId);
+    var mediaType = (file.type && file.type.startsWith('image/')) ? file.type : 'image/jpeg';
+    toBase64(file, function(err, b64){
+      if(err){ hide(msgId); $(errTxtId).textContent = 'Could not read image file.'; show(errId); return; }
+      $(msgTxtId).textContent = 'Identifying cylinder…';
+      callGroq(b64, mediaType, function(parsed){
+        hide(msgId);
+        if(!parsed.found){ $(errTxtId).textContent = parsed.reason || 'No Festo cylinder detected.'; show(errId); return; }
+        onResult(parsed);
+      }, function(errMsg){
+        hide(msgId);
+        $(errTxtId).textContent = errMsg;
+        show(errId);
       });
     });
-    $('stockList').querySelectorAll('.dbtn').forEach(function(b){
-      b.addEventListener('click',function(){
-        if(!db)return;
-        showDeleteModal(b.dataset.model,b.dataset.id);
-      });
+  });
+}
+
+// ── STOCK OUT ─────────────────────────────────────────────────────────────────
+setupScan('fileOut','promptOut','prevOutWrap','prevOut','msgOut','msgOutTxt','errOut','errOutTxt','resultOut', function(r){
+  outResult = r; outQty = 1; $('outQVal').textContent = '1';
+  $('outTitle').textContent = r.model || 'Unknown';
+  $('outSub').textContent = r.series ? 'Series ' + r.series : 'Festo cylinder';
+  renderBadge($('outConf'), r.confidence);
+  renderSpecs($('outSpecs'), r);
+  renderMachinePicker(r.model, $('outMachBox'), $('outNoMatch'), $('outMachNo'), $('outLoc'));
+  show('resultOut');
+  $('outLogBtn').textContent = 'Log replacement';
+  $('outLogBtn').className = 'abtn';
+});
+
+$('retryOut').addEventListener('click', function(){ $('fileOut').dispatchEvent(new Event('change')); });
+$('outQMinus').addEventListener('click', function(){ if(outQty>1){outQty--;$('outQVal').textContent=outQty;} });
+$('outQPlus').addEventListener('click', function(){ outQty++;$('outQVal').textContent=outQty; });
+
+$('outLogBtn').addEventListener('click', function(){
+  if(!outResult) return;
+  var machine = $('outMachNo').value || '';
+  var location = $('outLoc').value || '';
+  if(!machine){ alert('Please select a machine before logging.'); return; }
+  if(!db){ alert('Connect Firebase in the Settings tab.'); return; }
+  var t = nowStrings();
+  var mk = outResult.model.toLowerCase().replace(/[^a-z0-9-_]/g,'_');
+  // deduct from stock
+  var ex = stock.filter(function(s){ return s.model.toLowerCase() === outResult.model.toLowerCase(); })[0];
+  var newQty = ex ? Math.max(0, ex.qty - outQty) : 0;
+  db.collection('stock').doc(mk).set({model:outResult.model, series:outResult.series||'', bore:outResult.bore_mm||'', stroke:outResult.stroke_mm||'', qty:newQty});
+  db.collection('replacements').add({date:t.date, time:t.time, ts:firebase.firestore.FieldValue.serverTimestamp(), model:outResult.model, series:outResult.series||'', bore:outResult.bore_mm||'', stroke:outResult.stroke_mm||'', machine:machine, location:location, qty:outQty, type:'out'});
+  $('outLogBtn').textContent = 'Logged ✓';
+  $('outLogBtn').className = 'abtn ok';
+});
+
+function renderMachinePicker(model, boxEl, noMatchEl, machNoEl, locEl){
+  boxEl.innerHTML = ''; hide(boxEl.id); hide(noMatchEl.id);
+  machNoEl.value = ''; locEl.value = '';
+  var key = (model||'').toLowerCase();
+  var entry = mapping[key];
+  if(!entry){
+    Object.keys(mapping).forEach(function(k){
+      if(!entry && (key.indexOf(k)!==-1 || k.indexOf(key)!==-1)) entry = mapping[k];
     });
   }
+  if(!entry){ show(noMatchEl.id); return; }
+  var machines = entry.machines || [];
+  if(machines.length === 1){
+    boxEl.innerHTML = '<div class="mach-box"><i class="ti ti-settings-2" style="flex-shrink:0;color:var(--pur-tx)"></i><div><div class="mach-no">'+machines[0].machine+'</div><div class="mach-loc">'+(machines[0].location||'')+'</div></div></div>';
+    machNoEl.value = machines[0].machine;
+    locEl.value = machines[0].location || '';
+    show(boxEl.id);
+  } else {
+    var html = '<div class="mach-pick-label"><i class="ti ti-settings-2" style="font-size:13px;vertical-align:-1px;margin-right:4px"></i>Select the machine</div><div class="mach-pick-list">';
+    machines.forEach(function(m, i){
+      html += '<button class="mach-opt" data-i="'+i+'" data-machine="'+m.machine+'" data-loc="'+(m.location||'')+'"><i class="ti ti-settings-2" style="color:var(--pur-tx);font-size:16px;flex-shrink:0"></i><div><div class="mach-opt-no">'+m.machine+'</div><div class="mach-opt-loc">'+(m.location||'')+'</div></div></button>';
+    });
+    html += '</div>';
+    boxEl.innerHTML = html;
+    boxEl.querySelectorAll('.mach-opt').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        boxEl.querySelectorAll('.mach-opt').forEach(function(b){ b.classList.remove('selected'); });
+        btn.classList.add('selected');
+        machNoEl.value = btn.dataset.machine;
+        locEl.value = btn.dataset.loc;
+      });
+    });
+    show(boxEl.id);
+  }
+}
 
-  // ── Log tab ──────────────────────────────────────────────────────────────
-  function renderLog(){filterLog();}
+// ── STOCK IN ──────────────────────────────────────────────────────────────────
+setupScan('fileIn','promptIn','prevInWrap','prevIn','msgIn','msgInTxt','errIn','errInTxt','resultIn', function(r){
+  // validate against mapping
+  var key = (r.model||'').toLowerCase();
+  var inMapping = mapping[key] || Object.keys(mapping).find(function(k){ return key.indexOf(k)!==-1 || k.indexOf(key)!==-1; });
+  if(!inMapping){ $('errInTxt').textContent = '⚠ '+r.model+' is not in your mapping. Add it to the Mapping tab first.'; show('errIn'); return; }
+  inResult = r; inQty = 1; $('inQVal').textContent = '1';
+  $('inTitle').textContent = r.model || 'Unknown';
+  $('inSub').textContent = r.series ? 'Series ' + r.series : 'Festo cylinder';
+  renderBadge($('inConf'), r.confidence);
+  renderSpecs($('inSpecs'), r);
+  show('resultIn');
+  $('inAddBtn').textContent = 'Add to stock';
+  $('inAddBtn').className = 'abtn';
+});
 
-  window.filterLog=function(){
-    var filtered=replacements.slice();
-    if(!filtered.length){
-      $('logArea').innerHTML='<div class="empty"><i class="ti ti-history" style="font-size:24px;display:block;margin-bottom:8px"></i>No replacements logged yet</div>';
-      return;
+$('inQMinus').addEventListener('click', function(){ if(inQty>1){inQty--;$('inQVal').textContent=inQty;} });
+$('inQPlus').addEventListener('click', function(){ inQty++;$('inQVal').textContent=inQty; });
+
+$('inAddBtn').addEventListener('click', function(){
+  if(!inResult) return;
+  if(!db){ alert('Connect Firebase in the Settings tab.'); return; }
+  var t = nowStrings();
+  var mk = inResult.model.toLowerCase().replace(/[^a-z0-9-_]/g,'_');
+  var ex = stock.filter(function(s){ return s.model.toLowerCase() === inResult.model.toLowerCase(); })[0];
+  var newQty = ex ? ex.qty + inQty : inQty;
+  db.collection('stock').doc(mk).set({model:inResult.model, series:inResult.series||'', bore:inResult.bore_mm||'', stroke:inResult.stroke_mm||'', qty:newQty});
+  db.collection('replacements').add({date:t.date, time:t.time, ts:firebase.firestore.FieldValue.serverTimestamp(), model:inResult.model, series:inResult.series||'', bore:inResult.bore_mm||'', stroke:inResult.stroke_mm||'', machine:'—', location:'—', qty:inQty, type:'in'});
+  $('inAddBtn').textContent = 'Added ✓';
+  $('inAddBtn').className = 'abtn ok';
+});
+
+// ── STOCK tab ─────────────────────────────────────────────────────────────────
+function renderStock(){
+  var units = stock.reduce(function(a,s){ return a+s.qty; }, 0);
+  $('stockMeta').textContent = units+' unit'+(units!==1?'s':'')+' · '+stock.length+' model'+(stock.length!==1?'s':'');
+  if(!stock.length){ $('stockList').innerHTML = '<div class="empty"><i class="ti ti-box-off" style="font-size:24px;display:block;margin-bottom:8px"></i>No cylinders in stock yet</div>'; return; }
+  $('stockList').innerHTML = stock.map(function(s){
+    var mk = s.model.toLowerCase();
+    var minStock = (mapping[mk] && mapping[mk].minStock) || 0;
+    var isLow = minStock > 0 && s.qty < minStock;
+    return '<div class="si'+(isLow?' low':'')+'">'
+      +'<i class="ti ti-cylinder" style="font-size:20px;color:'+(isLow?'var(--red-tx)':'var(--text2)')+';flex-shrink:0"></i>'
+      +'<div class="si-info"><div class="si-name">'+s.model+(isLow?'<span class="warn-badge">Low stock</span>':'')+'</div>'
+      +'<div class="si-sub">'+[s.bore?s.bore+'mm bore':'',s.stroke?s.stroke+'mm stroke':'',s.series].filter(Boolean).join(' · ')+'</div></div>'
+      +'<div class="sqty">'+s.qty+'</div>'
+      +'<button class="dbtn" data-id="'+s.id+'" data-model="'+s.model+'" title="Remove"><i class="ti ti-trash"></i></button>'
+      +'</div>';
+  }).join('');
+  $('stockList').querySelectorAll('.dbtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      pendingStockDelete = b.dataset.id;
+      $('deleteStockMsg').textContent = 'Remove '+b.dataset.model+' from stock? This cannot be undone.';
+      show('deleteStockModal');
+    });
+  });
+}
+
+$('deleteStockCancel').addEventListener('click', function(){ hide('deleteStockModal'); pendingStockDelete=null; });
+$('deleteStockConfirm').addEventListener('click', function(){
+  if(pendingStockDelete && db) db.collection('stock').doc(pendingStockDelete).delete();
+  hide('deleteStockModal'); pendingStockDelete=null;
+});
+$('deleteStockModal').addEventListener('click', function(e){ if(e.target===$('deleteStockModal')){ hide('deleteStockModal'); pendingStockDelete=null; } });
+
+$('stockExpBtn').addEventListener('click', function(){
+  var wb = XLSX.utils.book_new();
+  var seen = {};
+  var rows = (mappingRows||[]).map(function(row){
+    if(seen[row.key]) return null;
+    seen[row.key] = true;
+    var s = stock.filter(function(x){ return x.model.toLowerCase()===row.key; })[0];
+    var qty = s ? s.qty : 0;
+    var mk = mapping[row.key] || {};
+    var minS = mk.minStock || 0;
+    var maxS = mk.maxStock || 0;
+    var toOrder = maxS > 0 && qty < maxS ? maxS - qty : '';
+    var status = minS > 0 && qty < minS ? 'Low stock' : 'OK';
+    return [row.displayName, qty, minS||'', maxS||'', toOrder, status];
+  }).filter(Boolean);
+  stock.forEach(function(s){
+    var mk = s.model.toLowerCase();
+    if(!seen[mk]){
+      var minS=(mapping[mk]&&mapping[mk].minStock)||0;
+      var maxS=(mapping[mk]&&mapping[mk].maxStock)||0;
+      var toOrder=maxS>0&&s.qty<maxS?maxS-s.qty:'';
+      var status=minS>0&&s.qty<minS?'Low stock':'OK';
+      rows.push([s.model,s.qty,minS||'',maxS||'',toOrder,status]);
     }
-    window._logDeleteHandler=function(id){
-      window._pendingLogDeleteId=id;
-      $('logDeletePw').value='';
-      $('logDeleteModal').style.display='flex';
-      setTimeout(function(){$('logDeletePw').focus();},100);
-    };
-    $('logArea').innerHTML='<div class="log-wrap"><table class="lt">'
-      +'<thead><tr><th>Date</th><th>Time</th><th>Model</th><th>Machine No.</th><th>Location</th><th>Qty</th><th></th></tr></thead>'
-      +'<tbody>'+filtered.map(function(r){
-        return '<tr><td>'+r.date+'</td><td>'+r.time+'</td>'
-          +'<td style="font-family:monospace;font-size:12px">'+r.model+'</td>'
-          +'<td>'+r.machine+'</td><td>'+(r.location||'—')+'</td><td>'+r.qty+'</td>'
-          +'<td><button class="dbtn log-del" data-id="'+r.id+'" title="Delete"><i class="ti ti-trash"></i></button></td></tr>';
-      }).join('')+'</tbody></table></div>';
-    document.querySelectorAll('.log-del').forEach(function(b){
-      b.addEventListener('click',function(){window._logDeleteHandler(b.dataset.id);});
-    });
-  }
+  });
+  if(!rows.length){ alert('No data to export.'); return; }
+  var ws = XLSX.utils.aoa_to_sheet([['Model','Qty','Min Stock','Max Stock','To Order','Status']].concat(rows));
+  ws['!cols'] = [{wch:25},{wch:6},{wch:10},{wch:10},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Stock');
+  XLSX.writeFile(wb, 'festo-stock-'+new Date().toISOString().slice(0,10)+'.xlsx');
+});
 
-  // ── Export ───────────────────────────────────────────────────────────────
-  $('stockExpBtn').addEventListener('click',function(){
-    var wb=XLSX.utils.book_new();
-    // build a complete list from mapping, merging in actual stock quantities
-    var stockMap={};
-    stock.forEach(function(s){stockMap[s.model.toLowerCase()]=s;});
-    // use mapping rows for order and completeness
-    var seen={};
-    var rows=[];
-    (window._mappingRows||[]).forEach(function(row){
-      if(seen[row.key])return;// one row per model in export
-      seen[row.key]=true;
-      var s=stockMap[row.key];
-      var qty=s?s.qty:0;
-      var minStock=(mapping[row.key]&&mapping[row.key].minStock)||0;
-      var status=minStock>0&&qty<minStock?'Low stock':'OK';
-      rows.push([row.displayName,s?s.series||'':'',s?s.bore||'':'',s?s.stroke||'':'',qty,minStock||'',status]);
+// ── LOG tab ───────────────────────────────────────────────────────────────────
+function renderLog(){
+  if(!replacements.length){ $('logArea').innerHTML='<div class="empty"><i class="ti ti-history" style="font-size:24px;display:block;margin-bottom:8px"></i>No replacements logged yet</div>'; return; }
+  $('logArea').innerHTML = '<div class="log-wrap"><table class="lt">'
+    +'<thead><tr><th>Date</th><th>Time</th><th>Model</th><th>Machine</th><th>Location</th><th>Qty</th><th></th></tr></thead>'
+    +'<tbody>'+replacements.map(function(r){
+      return '<tr><td>'+r.date+'</td><td>'+r.time+'</td>'
+        +'<td style="font-family:monospace;font-size:12px">'+r.model+'</td>'
+        +'<td>'+r.machine+'</td><td>'+(r.location||'—')+'</td><td>'+r.qty+'</td>'
+        +'<td><button class="dbtn log-del" data-id="'+r.id+'" title="Delete"><i class="ti ti-trash"></i></button></td></tr>';
+    }).join('')+'</tbody></table></div>';
+  $('logArea').querySelectorAll('.log-del').forEach(function(b){
+    b.addEventListener('click', function(){
+      pendingLogDelete = b.dataset.id;
+      $('logPw').value = '';
+      show('deleteLogModal');
+      setTimeout(function(){ $('logPw').focus(); }, 100);
     });
-    // also add any stocked items not in mapping
-    stock.forEach(function(s){
-      var mk=s.model.toLowerCase();
-      if(!seen[mk]){
-        var minStock=(mapping[mk]&&mapping[mk].minStock)||0;
-        var status=minStock>0&&s.qty<minStock?'Low stock':'OK';
-        rows.push([s.model,s.series||'',s.bore||'',s.stroke||'',s.qty,minStock||'',status]);
+  });
+}
+
+$('deleteLogCancel').addEventListener('click', function(){ hide('deleteLogModal'); pendingLogDelete=null; });
+$('deleteLogConfirm').addEventListener('click', function(){
+  if($('logPw').value !== '1921'){ $('logPw').value=''; $('logPw').placeholder='Incorrect — try again'; return; }
+  if(pendingLogDelete && db) db.collection('replacements').doc(pendingLogDelete).delete();
+  hide('deleteLogModal'); pendingLogDelete=null;
+});
+$('logPw').addEventListener('keydown', function(e){ if(e.key==='Enter') $('deleteLogConfirm').click(); });
+$('deleteLogModal').addEventListener('click', function(e){ if(e.target===$('deleteLogModal')){ hide('deleteLogModal'); pendingLogDelete=null; } });
+
+$('logExpBtn').addEventListener('click', function(){
+  if(!replacements.length){ alert('No replacements to export.'); return; }
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet([['Date','Time','Model','Machine No.','Location','Qty','Type']].concat(
+    replacements.map(function(r){ return [r.date,r.time,r.model,r.machine,r.location||'',r.qty,r.type==='in'?'In':'Out']; })
+  ));
+  ws['!cols']=[{wch:12},{wch:8},{wch:22},{wch:14},{wch:22},{wch:6},{wch:6}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Replacements');
+  XLSX.writeFile(wb, 'festo-log-'+new Date().toISOString().slice(0,10)+'.xlsx');
+});
+
+// ── MAPPING tab ───────────────────────────────────────────────────────────────
+$('mappingFile').addEventListener('change', function(e){
+  var file = e.target.files[0]; if(!file) return;
+  file.arrayBuffer().then(function(ab){
+    var wb = XLSX.read(ab, {type:'array'});
+    var ws = wb.Sheets[wb.SheetNames[0]];
+    var rows = XLSX.utils.sheet_to_json(ws, {header:1});
+    mapping = {}; mappingRows = []; $('mBody').innerHTML = '';
+    var count = 0;
+    rows.forEach(function(r, i){
+      if(i===0) return;
+      var model = String(r[0]||'').trim();
+      var machine = String(r[1]||'').trim();
+      var location = String(r[2]||'').trim();
+      var minStockRaw = String(r[3]||'').trim();
+      var maxStockRaw = String(r[4]||'').trim();
+      var minStock = (minStockRaw===''||minStockRaw==='—') ? 0 : parseInt(minStockRaw)||0;
+      var maxStock = (maxStockRaw===''||maxStockRaw==='—') ? 0 : parseInt(maxStockRaw)||0;
+      if(model && machine){
+        var mk = model.toLowerCase();
+        mappingRows.push({key:mk, displayName:model, machine:machine, location:location, minStock:minStock, maxStock:maxStock});
+        if(!mapping[mk]){ mapping[mk]={displayName:model, machines:[], minStock:minStock, maxStock:maxStock}; }
+        else { if(minStock>0&&mapping[mk].minStock===0) mapping[mk].minStock=minStock; if(maxStock>0&&mapping[mk].maxStock===0) mapping[mk].maxStock=maxStock; }
+        mapping[mk].machines.push({machine:machine, location:location});
+        count++;
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td><td>'+(minStock||'—')+'</td><td>'+(maxStock||'—')+'</td>';
+        $('mBody').appendChild(tr);
       }
     });
-    if(!rows.length){alert('No mapping loaded — upload your mapping first.');return;}
-    var stockRows=rows.map(function(r){
-      var qty=r[4];
-      var minStock=r[5]||0;
-      var mk=r[0].toLowerCase();
-      var maxStock=(mapping[mk]&&mapping[mk].maxStock)||0;
-      var toOrder=maxStock>0&&qty<maxStock?maxStock-qty:0;
-      var status=minStock>0&&qty<minStock?'Low stock':'OK';
-      return[r[0],qty,minStock||'',maxStock||'',toOrder||'',status];
-    });
-    var ws=XLSX.utils.aoa_to_sheet([['Model','Qty','Min Stock','Max Stock','To Order','Status']].concat(stockRows));
-    ws['!cols']=[{wch:25},{wch:6},{wch:10},{wch:10},{wch:10},{wch:10}];
-    // colour the Status column
-    // Apply cell styles — requires cellStyles:true in writeFile
-    stockRows.forEach(function(r,i){
-      var cellRef=XLSX.utils.encode_cell({r:i+1,c:5});
-      if(!ws[cellRef])return;
-      var isLow=r[5]==='Low stock';
-      ws[cellRef].s={
-        fill:{patternType:'solid',fgColor:{rgb:isLow?'FFCCCC':'CCFFCC'}},
-        font:{bold:true,color:{rgb:isLow?'CC0000':'006600'}}
-      };
-    });
-    // also colour header row
-    for(var c=0;c<6;c++){
-      var hRef=XLSX.utils.encode_cell({r:0,c:c});
-      if(ws[hRef])ws[hRef].s={fill:{patternType:'solid',fgColor:{rgb:'DDDDDD'}},font:{bold:true}};
-    }
-    XLSX.utils.book_append_sheet(wb,ws,'Stock');
-    XLSX.writeFile(wb,'festo-stock-'+new Date().toISOString().slice(0,10)+'.xlsx',{cellStyles:true});
-  });
+    $('mStat').textContent = count + ' rows loaded — tap Save to sync';
+    $('mStat').className = 'fstat ok';
+    $('mPreview').style.display = count ? 'block' : 'none';
+    $('mSaveBtn').style.display = 'inline-block';
+  }).catch(function(){ $('mStat').textContent = 'Error reading file'; $('mStat').className = 'fstat'; });
+});
 
-  $('expBtn').addEventListener('click',function(){
-    if(!replacements.length){alert('No replacements to export yet.');return;}
-    var wb=XLSX.utils.book_new();
-    var ws=XLSX.utils.aoa_to_sheet([
-      ['Date','Time','Model','Series','Bore (mm)','Stroke (mm)','Machine No.','Location','Qty']
-    ].concat(replacements.map(function(r){
-      return[r.date,r.time,r.model,r.series||'',r.bore||'',r.stroke||'',r.machine,r.location||'',r.qty];
-    })));
-    ws['!cols']=[{wch:12},{wch:8},{wch:22},{wch:10},{wch:10},{wch:12},{wch:14},{wch:22},{wch:6}];
-    XLSX.utils.book_append_sheet(wb,ws,'Replacements');
-    var ws2=XLSX.utils.aoa_to_sheet([['Model','Series','Bore (mm)','Stroke (mm)','Qty']].concat(
-      stock.map(function(s){return[s.model,s.series||'',s.bore||'',s.stroke||'',s.qty];})
-    ));
-    XLSX.utils.book_append_sheet(wb,ws2,'Stock');
-    XLSX.writeFile(wb,'festo-replacements-'+new Date().toISOString().slice(0,10)+'.xlsx');
-  });
+$('mSaveBtn').addEventListener('click', function(){
+  if(!db){ alert('Connect Firebase in Settings first.'); return; }
+  var rows = mappingRows.map(function(r){ return {key:r.key, displayName:r.displayName, machine:r.machine, location:r.location, minStock:r.minStock||0, maxStock:r.maxStock||0}; });
+  db.collection('config').doc('mapping').set({rows: JSON.stringify(rows)}).then(function(){
+    $('mStat').textContent = rows.length + ' rows saved & synced';
+    $('mStat').className = 'fstat ok';
+    $('mSaveBtn').style.display = 'none';
+  }).catch(function(e){ alert('Save failed: '+e.message); });
+});
 
-  // ── Mapping tab ───────────────────────────────────────────────────────────
-  $('mappingFile').addEventListener('change',function(e){
-    var file=e.target.files[0];if(!file)return;
-    file.arrayBuffer().then(function(ab){
-      var wb=XLSX.read(ab,{type:'array'});
-      var ws=wb.Sheets[wb.SheetNames[0]];
-      var rows=XLSX.utils.sheet_to_json(ws,{header:1});
-      mapping={};var mappingRows=[];window._mappingRows=mappingRows;$('mBody').innerHTML='';var count=0;
-      rows.forEach(function(r,i){
-        if(i===0)return;
-        var model=String(r[0]||'').trim();
-        var machine=String(r[1]||'').trim();
-        var location=String(r[2]||'').trim();
-        var minStockRaw=String(r[3]||'').trim();
-        var minStock=minStockRaw===''||minStockRaw==='—'?0:parseInt(minStockRaw)||0;
-        if(model&&machine){
-          var mk=model.toLowerCase();
-          var maxStockRaw=String(r[4]||'').trim();
-          var maxStock=maxStockRaw===''||maxStockRaw==='—'?0:parseInt(maxStockRaw)||0;
-          mappingRows.push({key:mk,displayName:model,machine:machine,location:location,minStock:minStock,maxStock:maxStock});
-          count++;
-          var tr=document.createElement('tr');
-          tr.innerHTML='<td>'+model+'</td><td>'+machine+'</td><td>'+(location||'—')+'</td><td>'+(minStock||'—')+'</td><td>'+(maxStock||'—')+'</td>';
-          $('mBody').appendChild(tr);
-        }
+$('dlTpl').addEventListener('click', function(){
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet([
+    ['Model','Machine No.','Location','Min Stock','Max Stock'],
+    ['DSBC-40-300-PPVA-N3','M-001','Line 1 / Press Area',2,5],
+    ['DSBC-40-300-PPVA-N3','M-007','Line 2 / Press Area','',''],
+    ['ADN-25-150-A-P-A','M-042','Line 3 / Bay 2',3,6],
+    ['DFM-20-20-P-A-GF','M-017','Assembly / Station 4',1,3],
+  ]);
+  ws['!cols'] = [{wch:25},{wch:15},{wch:25},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Mapping');
+  XLSX.writeFile(wb, 'cylinder-mapping-template.xlsx');
+});
+
+function renderMappingPreview(){
+  // rebuild from current mappingRows (already in display or from load)
+  // only rebuild if mBody is empty and we have mapping
+  if($('mBody').children.length > 0) return;
+  if(!mappingRows.length) return;
+  mappingRows.forEach(function(row){
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+row.displayName+'</td><td>'+row.machine+'</td><td>'+(row.location||'—')+'</td><td>'+(row.minStock||'—')+'</td><td>'+(row.maxStock||'—')+'</td>';
+    $('mBody').appendChild(tr);
+  });
+  $('mPreview').style.display = 'block';
+}
+
+// ── SETTINGS tab ──────────────────────────────────────────────────────────────
+function renderSettings(){
+  var k = localStorage.getItem('festo_api_key');
+  if(k){ $('apiKey').value=k; $('apiSave').textContent='Saved ✓'; $('apiSave').className='sbtn ok'; }
+  var fc = localStorage.getItem('festo_fb_config');
+  if(fc){ $('fbConfigInput').value=fc; }
+}
+
+$('apiSave').addEventListener('click', function(){
+  var k = $('apiKey').value.trim(); if(!k) return;
+  localStorage.setItem('festo_api_key', k);
+  $('apiSave').textContent = 'Saved ✓'; $('apiSave').className = 'sbtn ok';
+});
+
+$('fbSave').addEventListener('click', function(){
+  var raw = $('fbConfigInput').value.trim(); if(!raw){ alert('Paste your Firebase config first.'); return; }
+  var match = raw.match(/\{[\s\S]*\}/);
+  if(!match){ alert('Could not find a config object — copy the full firebaseConfig block.'); return; }
+  try{
+    var jsonStr = match[0].replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)(\s*:)/g,'$1"$2"$3');
+    var cfg = JSON.parse(jsonStr);
+    localStorage.setItem('festo_fb_config', JSON.stringify(cfg));
+    initFirebase(cfg);
+  }catch(e){ alert('Could not parse config: '+e.message); }
+});
+
+function setFbStatus(state, msg){
+  var el = $('fbStatus');
+  if(state==='connected'){ el.textContent='● Syncing'; el.style.color='var(--green-tx)'; }
+  else if(state==='connecting'){ el.textContent='○ Connecting…'; el.style.color='var(--amber-tx)'; }
+  else{ el.textContent='✕ '+(msg||'Not connected'); el.style.color='var(--red-tx)'; }
+}
+
+// ── Firebase ──────────────────────────────────────────────────────────────────
+function initFirebase(cfg){
+  try{
+    var app;
+    try{ app = firebase.app(); } catch(e){ app = firebase.initializeApp(cfg); }
+    db = firebase.firestore();
+    setFbStatus('connected');
+    startListeners();
+  }catch(e){ setFbStatus('error', e.message); }
+}
+
+function startListeners(){
+  db.collection('stock').onSnapshot(function(snap){
+    stock = [];
+    snap.forEach(function(d){ stock.push(Object.assign({id:d.id}, d.data())); });
+    renderStock();
+  });
+  db.collection('replacements').orderBy('ts','desc').onSnapshot(function(snap){
+    replacements = [];
+    snap.forEach(function(d){ replacements.push(Object.assign({id:d.id}, d.data())); });
+    renderLog();
+  });
+  db.collection('config').doc('mapping').onSnapshot(function(d){
+    if(!d.exists) return;
+    try{
+      var data = d.data();
+      var rows = data.rows ? JSON.parse(data.rows) : null;
+      if(!rows || !rows.length) return;
+      mapping = {}; mappingRows = rows; $('mBody').innerHTML = '';
+      rows.forEach(function(row){
+        if(!mapping[row.key]){ mapping[row.key]={displayName:row.displayName||row.key, machines:[], minStock:row.minStock||0, maxStock:row.maxStock||0}; }
+        else { if(row.minStock>0&&mapping[row.key].minStock===0)mapping[row.key].minStock=row.minStock; if(row.maxStock>0&&mapping[row.key].maxStock===0)mapping[row.key].maxStock=row.maxStock; }
+        mapping[row.key].machines.push({machine:row.machine, location:row.location});
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>'+row.displayName+'</td><td>'+row.machine+'</td><td>'+(row.location||'—')+'</td><td>'+(row.minStock||'—')+'</td><td>'+(row.maxStock||'—')+'</td>';
+        $('mBody').appendChild(tr);
       });
-      // rebuild mapping lookup — minStock/maxStock per model = first non-zero value
-      mappingRows.forEach(function(row){
-        if(!mapping[row.key]){mapping[row.key]={displayName:row.displayName,machines:[],minStock:row.minStock||0,maxStock:row.maxStock||0};}
-        else{
-          if(row.minStock>0&&mapping[row.key].minStock===0)mapping[row.key].minStock=row.minStock;
-          if(row.maxStock>0&&mapping[row.key].maxStock===0)mapping[row.key].maxStock=row.maxStock;
-        }
-        mapping[row.key].machines.push({machine:row.machine,location:row.location});
-      });
-      $('mPreview').style.display=count?'block':'none';
-      $('mStat').textContent=count+' rows loaded — tap Save to sync';
-      $('mStat').className='fstat ok';
-      $('mSaveBtn').style.display='inline-block';
-    }).catch(function(){$('mStat').textContent='Error reading file';$('mStat').className='fstat';});
+      $('mPreview').style.display = 'block';
+      $('mStat').textContent = rows.length+' mappings loaded';
+      $('mStat').className = 'fstat ok';
+    }catch(e){ console.error('Mapping load error:', e); }
   });
+}
 
-  $('mSaveBtn').addEventListener('click',function(){
-    saveMappingToFirestore();
-    $('mSaveBtn').style.display='none';
-  });
-
-  $('dlTpl').addEventListener('click',function(){
-    var wb=XLSX.utils.book_new();
-    var ws=XLSX.utils.aoa_to_sheet([
-      ['Model','Machine No.','Location','Min Stock','Max Stock'],
-      ['DNC-40-200-PPV-A','M-001','Line 1 / Press Area',2,5],
-      ['DNC-40-200-PPV-A','M-007','Line 2 / Press Area','',''],
-      ['DNC-32-100-PPV-A','M-042','Line 3 / Bay 2',3,6],
-      ['ADN-20-50-I-PPS-A','M-017','Assembly / Station 4',1,3],
-    ]);
-    ws['!cols']=[{wch:25},{wch:15},{wch:25},{wch:10},{wch:10}];
-    XLSX.utils.book_append_sheet(wb,ws,'Mapping');
-    XLSX.writeFile(wb,'cylinder-mapping-template.xlsx');
-  });
-
-  // ── Stock in ──────────────────────────────────────────────────────────────
-  var currentResultIn=null;
-  var currentFileIn=null;
-  var qtyIn=1;
-
-  $('fileInputIn').addEventListener('change',function(e){
-    var file=e.target.files[0];if(!file)return;
-    currentFileIn=file;
-    $('previewImgIn').src=URL.createObjectURL(file);
-    $('scanPromptIn').style.display='none';
-    $('previewWrapIn').style.display='block';
-    $('resultCardIn').style.display='none';
-    $('errorBoxIn').style.display='none';
-    $('addStockBtn').className='lbtn';$('addStockBtn').textContent='Add to stock';
-    qtyIn=1;$('qValIn').textContent='1';
-    analyzeImageIn(file);
-  });
-
-  $('retryBtnIn').addEventListener('click',function(){if(currentFileIn)analyzeImageIn(currentFileIn);});
-
-  function analyzeImageIn(file){
-    var key=localStorage.getItem('festo_api_key')||$('apiKey').value.trim();
-    if(!key){showErrorIn('Enter your Groq API key at the top first.');return;}
-    if(!db){showErrorIn('Connect Firebase first (Settings tab).');return;}
-    $('analyzingMsgIn').style.display='flex';$('analyzingTextIn').textContent='Reading image…';
-    $('errorBoxIn').style.display='none';$('resultCardIn').style.display='none';
-    toBase64(file,function(b64){
-      $('analyzingTextIn').textContent='Identifying cylinder…';
-      var mediaType=file.type&&file.type.startsWith('image/')?file.type:'image/jpeg';
-      fetch('https://api.groq.com/openai/v1/chat/completions',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-        body:JSON.stringify({
-          model:'meta-llama/llama-4-scout-17b-16e-instruct',
-          max_tokens:1000,
-          messages:[
-            {role:'system',content:SYSTEM},
-            {role:'user',content:[
-              {type:'image_url',image_url:{url:'data:'+mediaType+';base64,'+b64}},
-              {type:'text',text:'Identify this Festo cylinder.'}
-            ]}
-          ]
-        })
-      })
-      .then(function(res){return res.json().then(function(d){return{ok:res.ok,data:d};});})
-      .then(function(r){
-        $('analyzingMsgIn').style.display='none';
-        if(!r.ok){showErrorIn(r.data&&r.data.error&&r.data.error.message?r.data.error.message:'API error');return;}
-        var raw=(r.data.choices&&r.data.choices[0]&&r.data.choices[0].message&&r.data.choices[0].message.content)||'';
-        var parsed;
-        console.log('RAW:',raw);
-        try{
-          var cleaned=raw.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json|```/g,'').trim();
-          console.log('CLEANED:',cleaned);
-          console.log('JSON start:',cleaned.indexOf('{'),'end:',cleaned.lastIndexOf('}'));
-          // find first JSON object in response
-          var start=cleaned.indexOf('{');
-          var end=cleaned.lastIndexOf('}');
-          if(start!==-1&&end!==-1){cleaned=cleaned.slice(start,end+1);}
-          parsed=JSON.parse(cleaned);
-        }
-        catch(e){showErrorIn('Could not parse response — try a clearer photo.');return;}
-        if(!parsed.found){showErrorIn(parsed.reason||'No Festo cylinder detected.');return;}
-        // check mapping
-        var mk=(parsed.model||'').toLowerCase();
-        var inMapping=mapping[mk]||Object.keys(mapping).find(function(k){return mk.indexOf(k)!==-1||k.indexOf(mk)!==-1;})?mapping[Object.keys(mapping).find(function(k){return mk.indexOf(k)!==-1||k.indexOf(mk)!==-1;})]:null;
-        if(!inMapping){
-          showErrorIn('⚠ '+parsed.model+' is not in your mapping list. Add it to the mapping before scanning it in.');
-          return;
-        }
-        currentResultIn=parsed;
-        renderResultIn(parsed);
-      })
-      .catch(function(){
-        $('analyzingMsgIn').style.display='none';
-        showErrorIn('Network error — check your connection.');
-      });
-    },function(){
-      $('analyzingMsgIn').style.display='none';
-      showErrorIn('Could not read the image file.');
-    });
-  }
-
-  function renderResultIn(r){
-    $('resTitleIn').textContent=r.model||'Unknown model';
-    $('resSubIn').textContent=r.series?'Series '+r.series:'Festo cylinder';
-    var c=$('resConfIn');
-    c.textContent={high:'High confidence',medium:'Medium confidence',low:'Low confidence'}[r.confidence]||r.confidence;
-    c.className='badge '+({high:'b-high',medium:'b-med',low:'b-low'}[r.confidence]||'');
-    $('resSpecsIn').innerHTML=[
-      ['Bore',r.bore_mm?r.bore_mm+' mm':'—'],
-      ['Stroke',r.stroke_mm?r.stroke_mm+' mm':'—'],
-      ['Mount',r.mount||'—'],
-      ['Cushioning',r.cushioning||'—']
-    ].concat(r.notes?[['Notes',r.notes]]:[]).map(function(s){
-      return '<div><div class="sl">'+s[0]+'</div><div class="sv">'+s[1]+'</div></div>';
-    }).join('');
-    $('resultCardIn').style.display='block';
-  }
-
-  $('qMinusIn').addEventListener('click',function(){if(qtyIn>1){qtyIn--;$('qValIn').textContent=qtyIn;}});
-  $('qPlusIn').addEventListener('click',function(){qtyIn++;$('qValIn').textContent=qtyIn;});
-
-  $('addStockBtn').addEventListener('click',function(){
-    if(!currentResultIn)return;
-    if(!db){alert('Connect Firebase first.');return;}
-    var now=new Date();
-    var modelKey=currentResultIn.model;
-    var ex=stock.filter(function(s){return s.model===modelKey;})[0];
-    var newQty=ex?ex.qty+qtyIn:qtyIn;
-    db.collection('stock').doc(modelKey.replace(/[^a-zA-Z0-9-_]/g,'_')).set({
-      model:modelKey,series:currentResultIn.series||'',
-      bore:currentResultIn.bore_mm||'',stroke:currentResultIn.stroke_mm||'',qty:newQty
-    });
-    db.collection('replacements').add({
-      date:now.toLocaleDateString('en-AU'),
-      time:now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}),
-      ts:firebase.firestore.FieldValue.serverTimestamp(),
-      model:modelKey,series:currentResultIn.series||'',
-      bore:currentResultIn.bore_mm||'',stroke:currentResultIn.stroke_mm||'',
-      machine:'—',location:'—',qty:qtyIn,type:'in'
-    });
-    $('addStockBtn').textContent='Added ✓';$('addStockBtn').className='lbtn ok';
-  });
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  function showError(msg){$('errorText').textContent=msg;$('errorBox').style.display='flex';}
-  function showErrorIn(msg){$('errorTextIn').textContent=msg;$('errorBoxIn').style.display='flex';}
-  function toBase64(file,cb,errCb){
-    var r=new FileReader();
-    r.onload=function(){cb(r.result.split(',')[1]);};
-    r.onerror=function(){errCb();};
-    r.readAsDataURL(file);
-  }
-
+// ── Boot ──────────────────────────────────────────────────────────────────────
+(function boot(){
+  var fc = localStorage.getItem('festo_fb_config');
+  if(fc){ try{ setFbStatus('connecting'); initFirebase(JSON.parse(fc)); }catch(e){ setFbStatus('error'); } }
+  else{ setFbStatus('none'); }
   renderStock();
   renderLog();
-
-  // ── Log delete modal ─────────────────────────────────────────────────────
-  var _pendingLogDeleteId=null;
-  $('logDeleteCancelBtn').addEventListener('click',function(){
-    $('logDeleteModal').style.display='none';
-    $('logDeletePw').value='';
-  });
-  $('logDeleteConfirmBtn').addEventListener('click',function(){
-    if($('logDeletePw').value!=='1921'){
-      $('logDeletePw').value='';
-      $('logDeletePw').placeholder='Incorrect — try again';
-      $('logDeletePw').focus();
-      return;
-    }
-    if(window._pendingLogDeleteId&&db){
-      db.collection('replacements').doc(window._pendingLogDeleteId).delete();
-    }
-    $('logDeleteModal').style.display='none';
-    $('logDeletePw').value='';
-    window._pendingLogDeleteId=null;
-  });
-  $('logDeletePw').addEventListener('keydown',function(e){
-    if(e.key==='Enter')$('logDeleteConfirmBtn').click();
-  });
-  $('logDeleteModal').addEventListener('click',function(e){
-    if(e.target===$('logDeleteModal')){$('logDeleteModal').style.display='none';$('logDeletePw').value='';}
-  });
-
-  // ── Delete modal ──────────────────────────────────────────────────────────
-  var pendingDeleteId=null;
-  function showDeleteModal(model,id){
-    pendingDeleteId=id;
-    $('deleteModalMsg').textContent='This will remove '+model+' from stock. This cannot be undone.';
-    $('deleteModal').style.display='flex';
-  }
-  $('deleteCancelBtn').addEventListener('click',function(){
-    $('deleteModal').style.display='none';
-    pendingDeleteId=null;
-  });
-  $('deleteConfirmBtn').addEventListener('click',function(){
-    if(pendingDeleteId&&db){
-      db.collection('stock').doc(pendingDeleteId).delete();
-    }
-    $('deleteModal').style.display='none';
-    pendingDeleteId=null;
-  });
-  $('deleteModal').addEventListener('click',function(e){
-    if(e.target===$('deleteModal')){$('deleteModal').style.display='none';pendingDeleteId=null;}
-  });
+})();
 
 })();
 </script>
