@@ -295,7 +295,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.35 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.37 — 19 Jun 2026</div>
 <div class="modal-overlay" id="logDeleteModal" style="display:none">
   <div class="modal">
     <h3>Delete log entry?</h3>
@@ -552,7 +552,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 
   $('retryBtn').addEventListener('click',function(){if(currentFile)analyzeImage(currentFile);});
 
-  var SYSTEM='You are an expert Festo pneumatics engineer. The user sends a photo of a Festo air cylinder. Output ONLY raw JSON with no thinking, no explanation, no markdown.\n\nIf a Festo cylinder is visible:\n{"found":true,"model":"DNC-40-200-PPV-A","series":"DNC","bore_mm":40,"stroke_mm":200,"mount":"foot","cushioning":"pneumatic","notes":"ISO 15552 profile cylinder","confidence":"high"}\n\nIf not found:\n{"found":false,"reason":"No Festo cylinder visible"}\n\nconfidence: "high"|"medium"|"low"\nmount examples: foot, flange, trunnion, clevis, direct';
+  var SYSTEM='You are a label reader for Festo pneumatic cylinders. Look at the photo and read the white product label on the cylinder. The label always shows the FESTO logo and a model number like DSBC-40-300-PPVA-N3 or ADN-25-150-A-P-A or DNC-40-200-PPV-A.\n\nRead the model number exactly as printed on the label. Then return ONLY this JSON, nothing else:\n\nIf label is readable:\n{"found":true,"model":"DSBC-40-300-PPVA-N3","series":"DSBC","bore_mm":40,"stroke_mm":300,"mount":"none","cushioning":"pneumatic","notes":"ISO 15552","confidence":"high"}\n\nIf no Festo label visible:\n{"found":false,"reason":"No Festo label found"}\n\nReturn ONLY the JSON object. No explanation, no markdown, no extra text.';
 
   function analyzeImage(file){
     var key=localStorage.getItem('festo_api_key')||$('apiKey').value.trim();
@@ -567,8 +567,8 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
         body:JSON.stringify({
-          model:'qwen/qwen3.6-27b',
-          max_tokens:4000,
+          model:'meta-llama/llama-4-scout-17b-16e-instruct',
+          max_tokens:1000,
           messages:[
             {role:'system',content:SYSTEM},
             {role:'user',content:[
@@ -945,8 +945,8 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
         body:JSON.stringify({
-          model:'qwen/qwen3.6-27b',
-          max_tokens:4000,
+          model:'meta-llama/llama-4-scout-17b-16e-instruct',
+          max_tokens:1000,
           messages:[
             {role:'system',content:SYSTEM},
             {role:'user',content:[
