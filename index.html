@@ -295,7 +295,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.37 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.38 — 19 Jun 2026</div>
 <div class="modal-overlay" id="logDeleteModal" style="display:none">
   <div class="modal">
     <h3>Delete log entry?</h3>
@@ -584,8 +584,11 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         if(!r.ok){showError(r.data&&r.data.error&&r.data.error.message?r.data.error.message:'API error');return;}
         var raw=(r.data.choices&&r.data.choices[0]&&r.data.choices[0].message&&r.data.choices[0].message.content)||'';
         var parsed;
+        console.log('RAW:',raw);
         try{
           var cleaned=raw.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json|```/g,'').trim();
+          console.log('CLEANED:',cleaned);
+          console.log('JSON start:',cleaned.indexOf('{'),'end:',cleaned.lastIndexOf('}'));
           // find first JSON object in response
           var start=cleaned.indexOf('{');
           var end=cleaned.lastIndexOf('}');
@@ -962,8 +965,11 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
         if(!r.ok){showErrorIn(r.data&&r.data.error&&r.data.error.message?r.data.error.message:'API error');return;}
         var raw=(r.data.choices&&r.data.choices[0]&&r.data.choices[0].message&&r.data.choices[0].message.content)||'';
         var parsed;
+        console.log('RAW:',raw);
         try{
           var cleaned=raw.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json|```/g,'').trim();
+          console.log('CLEANED:',cleaned);
+          console.log('JSON start:',cleaned.indexOf('{'),'end:',cleaned.lastIndexOf('}'));
           // find first JSON object in response
           var start=cleaned.indexOf('{');
           var end=cleaned.lastIndexOf('}');
