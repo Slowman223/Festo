@@ -137,32 +137,13 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
 <body>
 <div class="app">
 
-<div class="api-bar">
-  <label><i class="ti ti-key" style="font-size:15px;vertical-align:-2px;margin-right:4px"></i>Groq key</label>
-  <input type="password" id="apiKey" placeholder="gsk_..." autocomplete="off">
-  <button class="api-save" id="apiSave">Save</button>
-</div>
-
-<div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:.6rem 1rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:8px">
-  <span style="font-size:12px;color:var(--text2)"><i class="ti ti-cloud" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>Firebase</span>
-  <span style="font-size:12px" id="fbStatus">○ Not connected</span>
-  <button style="font-size:12px;padding:3px 8px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);cursor:pointer" id="fbShowSetup">Setup</button>
-</div>
-<div class="card" id="fbSetupCard" style="display:none;margin-bottom:1.25rem">
-  <div style="font-size:14px;font-weight:500;margin-bottom:6px">Firebase config</div>
-  <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Paste your <code>firebaseConfig</code> object from the Firebase console. Only needs to be done once per device.</div>
-  <textarea id="fbConfigInput" style="width:100%;height:100px;border:0.5px solid var(--border);border-radius:var(--r);padding:8px;font-size:12px;font-family:monospace;background:var(--bg2);color:var(--text);resize:vertical" placeholder="const firebaseConfig = { apiKey: ..., authDomain: ..., projectId: ..., ... }"></textarea>
-  <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
-    <button class="api-save" id="fbSave">Connect</button>
-    <span style="font-size:12px;color:var(--text2)">All tablets use the same config</span>
-  </div>
-</div>
 <div class="tabs">
   <button class="tab active" data-tab="out"><i class="ti ti-arrow-up"></i> Stock out</button>
   <button class="tab" data-tab="in"><i class="ti ti-arrow-down"></i> Stock in</button>
   <button class="tab" data-tab="stock"><i class="ti ti-package"></i> Stock</button>
   <button class="tab" data-tab="log"><i class="ti ti-history"></i> Log</button>
   <button class="tab" data-tab="mapping"><i class="ti ti-table"></i> Mapping</button>
+  <button class="tab" data-tab="settings"><i class="ti ti-settings"></i> Settings</button>
 </div>
 
 <!-- SCAN -->
@@ -314,7 +295,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.29 — 19 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v0.30 — 19 Jun 2026</div>
 <div class="modal-overlay" id="logDeleteModal" style="display:none">
   <div class="modal">
     <h3>Delete log entry?</h3>
@@ -336,6 +317,29 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
     </div>
   </div>
 </div>
+<!-- SETTINGS -->
+<div class="panel" id="panel-settings">
+  <div class="card" style="margin-bottom:1rem">
+    <div style="font-size:14px;font-weight:500;margin-bottom:.75rem"><i class="ti ti-brand-groq" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>Groq API key</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:.5rem">Required for photo scanning. Get a free key at console.groq.com</div>
+    <div style="display:flex;gap:8px">
+      <input type="password" id="apiKey" placeholder="gsk_..." autocomplete="off" style="flex:1;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--bg2);color:var(--text);font-family:monospace">
+      <button class="api-save" id="apiSave">Save</button>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:1rem">
+    <div style="font-size:14px;font-weight:500;margin-bottom:4px"><i class="ti ti-brand-firebase" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>Firebase</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+      <span style="font-size:13px;color:var(--text2)">Status</span>
+      <span style="font-size:13px" id="fbStatus">○ Not connected</span>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:.5rem">Paste your firebaseConfig to sync data across all tablets.</div>
+    <textarea id="fbConfigInput" style="width:100%;height:90px;border:0.5px solid var(--border);border-radius:var(--r);padding:8px;font-size:12px;font-family:monospace;background:var(--bg2);color:var(--text);resize:vertical;margin-bottom:8px" placeholder="const firebaseConfig = { apiKey: ..., projectId: ..., ... }"></textarea>
+    <button class="api-save" id="fbSave">Connect</button>
+  </div>
+  <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:.5rem">Keys are saved in this browser only — not shared or uploaded anywhere.</div>
+</div>
+
 </div><!-- .app -->
 
 <script>
@@ -688,6 +692,13 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   });
 
   // ── Stock tab ────────────────────────────────────────────────────────────
+  function renderSettings(){
+    var storedKey=localStorage.getItem('festo_api_key')||'';
+    if(storedKey){$('apiKey').value=storedKey;$('apiSave').textContent='Saved ✓';$('apiSave').className='api-save ok';}
+    var fc=localStorage.getItem('festo_fb_config');
+    if(fc){$('fbConfigInput').value=fc;}
+  }
+
   function renderStock(){
     var units=stock.reduce(function(a,s){return a+s.qty;},0);
     $('stockMeta').textContent=units+' unit'+(units!==1?'s':'')+' · '+stock.length+' model'+(stock.length!==1?'s':'');
@@ -1072,13 +1083,6 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   });
 
 })();
-</script>
-<script>
-// Standalone — works even if Firebase module fails to load
-document.getElementById('fbShowSetup').addEventListener('click',function(){
-  var c=document.getElementById('fbSetupCard');
-  c.style.display=c.style.display==='none'?'block':'none';
-});
 </script>
 </body>
 </html>
