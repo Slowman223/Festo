@@ -338,7 +338,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.04 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.05 — 20 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -425,14 +425,7 @@ function deriveSpecs(r){
 }
 
 // ── API call ─────────────────────────────────────────────────────────────────
-var SYSTEM = [
-  'You are a label reader for Festo pneumatic cylinders.',
-  'Find the white Festo label in the photo and read the model number printed on it.',
-  'Return ONLY this JSON:',
-  '{"found":true,"model":"DSBC-40-300-PPVA-N3","confidence":"high"}',
-  'Or if no label: {"found":false}',
-  'Use the exact model number from the label. confidence is high, medium, or low.'
-].join('\n');
+
 
 function callGroq(base64, mediaType, onSuccess, onError){
   var key = localStorage.getItem('festo_api_key') || ($('apiKey').value || '').trim();
