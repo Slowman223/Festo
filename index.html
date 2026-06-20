@@ -338,7 +338,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.02 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.03 — 20 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -451,23 +451,9 @@ function callGroq(base64, mediaType, onSuccess, onError){
     var end = raw.lastIndexOf('}');
     if(start === -1 || end === -1){ onError('No JSON in response. Raw: ' + raw.slice(0,200)); return; }
     var jsonStr = raw.slice(start, end + 1);
-    // fix common model output errors: missing quote before colon e.g. "model: -> "model":
-    var fixed = jsonStr
-      .replace(/"([a-zA-Z_]+):\s*/g, '"$1":')   // fix "key: -> "key":
-      .replace(/"([a-zA-Z_]+)":\s*([a-zA-Z][^",}\]]*?)([,}])/g, function(m,k,v,end){
-        // if value looks unquoted string, quote it
-        if(v.trim() && v.trim() !== 'true' && v.trim() !== 'false' && v.trim() !== 'null' && isNaN(v.trim())){
-          return '"'+k+'":"'+v.trim()+'"'+end;
-        }
-        return m;
-      });
     var parsed;
-    try{ parsed = JSON.parse(fixed); }
-    catch(e){
-      // last resort: try original
-      try{ parsed = JSON.parse(jsonStr); }
-      catch(e2){ onError('Parse error: ' + e2.message + '. JSON: ' + jsonStr.slice(0,300)); return; }
-    }
+    try{ parsed = JSON.parse(jsonStr); }
+    catch(e){ onError('Parse error: ' + e.message + '. JSON: ' + jsonStr.slice(0,300)); return; }
     onSuccess(parsed);
   })
   .catch(function(e){ onError('Network error: ' + e.message); });
