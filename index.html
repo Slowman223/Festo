@@ -338,7 +338,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.17 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.19 — 20 Jun 2026</div>
 </div><!-- .app -->
 
 <script>
@@ -446,14 +446,14 @@ function callGroq(base64, mediaType, onSuccess, onError){
     },
     body: JSON.stringify({
       model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-      max_tokens: 50,
+      max_tokens: 500,
       temperature: 0,
       messages: [
         {
           role: 'user',
           content: [
             { type: 'image_url', image_url: { url: 'data:' + mediaType + ';base64,' + base64 } },
-            { type: 'text', text: 'DSBC-40-300-PPVA-N3 is an example Festo model number. What is the model number on this label?' }
+            { type: 'text', text: 'Look at the white Festo label. Read ONLY the bold model number text character by character. Output just the model number with dashes exactly as printed.' }
           ]
         }
       ]
