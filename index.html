@@ -333,7 +333,7 @@ table.lt{width:100%;border-collapse:collapse;font-size:13px}
   </div>
 </div>
 
-<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.33 — 20 Jun 2026</div>
+<div style="text-align:center;font-size:11px;color:var(--text3);margin-top:2rem;padding-bottom:.5rem">v1.34 — 20 Jun 2026</div>
 </div>
 
 <script>
@@ -413,6 +413,8 @@ function callGroq(base64,mediaType,onSuccess,onError){
   .then(function(r){
     if(!r.ok){onError(r.data&&r.data.error?r.data.error.message:'API error');return;}
     var raw=(r.data.choices&&r.data.choices[0]&&r.data.choices[0].message&&r.data.choices[0].message.content)||'';
+    var usage=r.data.usage||{};
+    console.log('TOKENS — prompt:',usage.prompt_tokens,'completion:',usage.completion_tokens,'total:',usage.total_tokens);
     console.log('RAW:',raw);
     var text=raw.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```[a-z]*/gi,'').replace(/```/g,'').trim();
     var model=null;
